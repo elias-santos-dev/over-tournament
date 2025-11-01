@@ -1,0 +1,73 @@
+{
+	"$schema": "https://biomejs.dev/schemas/2.2.2/schema.json",
+	"vcs": {
+		"enabled": false,
+		"clientKind": "git",
+		"useIgnoreFile": false
+	},
+	"files": {
+		"ignoreUnknown": false
+	},
+	"formatter": {
+		"enabled": true,
+		"indentStyle": "tab"
+	},
+	"linter": {
+		"enabled": true,
+		"rules": {
+			"recommended": true,
+			"correctness": {
+				"noUnusedVariables": "off",
+				"noUnusedImports": "off"
+			},
+			"style": {
+				"useNamingConvention": {
+					"level": "warn",
+					"options": {
+						"conventions": [
+							{
+								"selector": { "kind": "functionParameter", "scope": "any" },
+								"formats": ["camelCase"]
+							},
+							{
+								"selector": { "kind": "typeParameter", "scope": "any" },
+								"formats": ["PascalCase"]
+							},
+							{
+								"selector": { "kind": "class", "scope": "global" },
+								"formats": ["PascalCase"]
+							},
+							{
+								"selector": { "kind": "typeLike", "scope": "global" },
+								"formats": ["PascalCase"]
+							},
+							{
+								"selector": { "kind": "interface", "scope": "global" },
+								"formats": ["PascalCase"]
+							},
+							{
+								"selector": { "kind": "enumMember", "scope": "global" },
+								"formats": ["CONSTANT_CASE"]
+							}
+						],
+						"requireAscii": true,
+						"strictCase": false
+					}
+				}
+			}
+		}
+	},
+	"javascript": {
+		"formatter": {
+			"quoteStyle": "double"
+		}
+	},
+	"assist": {
+		"enabled": true,
+		"actions": {
+			"source": {
+				"organizeImports": "off"
+			}
+		}
+	}
+}
