@@ -21,7 +21,7 @@ type Props = RNTextProps & {
 export default function Text({
 	size = "md",
 	weight = "regular",
-	color = "white",
+	color = Colors.base.text,
 	align = "left",
 	style,
 	children,
