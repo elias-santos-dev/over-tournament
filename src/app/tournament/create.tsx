@@ -15,6 +15,9 @@ import { useTournamentStore } from "../../store/useTournamentStore";
 import { usePlayerStore } from "../../store/usePlayerStore";
 import { Shape } from "../../theme/tokens/shape";
 import type { Tournament } from "../../store/types";
+import AddPlayerModal from "../../components/AddPlayerModal";
+import { Colors } from "../../theme/tokens/colors";
+import { LinearGradient } from "expo-linear-gradient";
 
 export default function CreateTournamentScreen() {
 	const router = useRouter();
@@ -25,6 +28,8 @@ export default function CreateTournamentScreen() {
 	const [sport, setSport] = useState<Tournament["sport"]>(
 		"Beach Tennis" as Tournament["sport"],
 	);
+	const [isAddModalVisible, setAddModalVisible] = useState(false);
+
 	const [groups, setGroups] = useState(1);
 	const [selectedPlayers, setSelectedPlayers] = useState<string[]>([]);
 	const [search, setSearch] = useState("");
@@ -64,7 +69,6 @@ export default function CreateTournamentScreen() {
 	const isInvalid =
 		selectedPlayers.length < 4 || selectedPlayers.length % 2 !== 0;
 
-	// --- Filtro de busca ---
 	const filteredPlayers = useMemo(() => {
 		if (!search.trim()) return players;
 		return players.filter((p) =>
@@ -74,6 +78,11 @@ export default function CreateTournamentScreen() {
 
 	return (
 		<View style={styles.container}>
+			<AddPlayerModal
+				visible={isAddModalVisible}
+				onClose={() => setAddModalVisible(false)}
+			/>
+
 			<Text size="xl" weight="bold" style={styles.title}>
 				Novo Torneio
 			</Text>
@@ -109,7 +118,14 @@ export default function CreateTournamentScreen() {
 			<Text
 				size="md"
 				weight="bold"
-				style={[styles.subtitle, isInvalid && { color: "red" }]}
+				style={[
+					styles.subtitle,
+					isInvalid && selectedPlayers.length > 0
+						? { color: Colors.status.error }
+						: selectedPlayers.length >= minRequired
+							? { color: Colors.status.success }
+							: {},
+				]}
 			>
 				Selecione os jogadores ({selectedPlayers.length}/{minRequired})
 			</Text>
@@ -120,7 +136,7 @@ export default function CreateTournamentScreen() {
 					value={search}
 					onChangeText={setSearch}
 				/>
-				<ActionButton label="Add" />
+				<ActionButton label="Add" onPress={() => setAddModalVisible(true)} />
 			</View>
 
 			<FlatList
@@ -130,17 +146,31 @@ export default function CreateTournamentScreen() {
 				renderItem={({ item }) => {
 					const isSelected = selectedPlayers.includes(item.id);
 					return (
-						<TouchableOpacity
-							style={[
-								styles.playerItem,
-								isSelected && { backgroundColor: "#a3bfd4" },
-							]}
-							onPress={() => handleSelectPlayer(item.id)}
-						>
-							<Text size="md" color={isSelected ? "#fff" : "#333"}>
-								{item.name}
-							</Text>
-						</TouchableOpacity>
+						<View>
+							{isSelected ? (
+								<LinearGradient
+									colors={[Colors.action.secondary, Colors.action.primary]}
+									start={{ x: 0, y: 0 }}
+									end={{ x: 0.5, y: 1 }}
+									style={styles.playerItem}
+								>
+									<TouchableOpacity onPress={() => handleSelectPlayer(item.id)}>
+										<Text size="md" color={Colors.base.textSecundary}>
+											{item.name}
+										</Text>
+									</TouchableOpacity>
+								</LinearGradient>
+							) : (
+								<TouchableOpacity
+									style={styles.playerItem}
+									onPress={() => handleSelectPlayer(item.id)}
+								>
+									<Text size="md" color={Colors.base.text}>
+										{item.name}
+									</Text>
+								</TouchableOpacity>
+							)}
+						</View>
 					);
 				}}
 			/>
