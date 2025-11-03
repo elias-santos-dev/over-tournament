@@ -1,9 +1,6 @@
 import { View, TouchableHighlight } from "react-native";
-import { Link } from "expo-router";
 import { Colors } from "../theme/tokens/colors";
 import { useTournamentStore } from "../store";
-
-import { Shape } from "../theme/tokens/shape";
 import CardTournament from "../components/CardTournament";
 import Text from "../components/Text";
 import ActionButton from "../components/ActionButton";

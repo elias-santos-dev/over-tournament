@@ -1,25 +1,27 @@
-import type { Group } from "./types";
+import type { Group, Player } from "./types";
 import { shuffle } from "../../utils/shuffle";
-import { generateRoundRobinMatches } from "./matchGenerator";
+import { generateSuper8Matches } from "./matchGenerator";
 import { uuid } from "../../utils/uuid";
 
 export function generateGroups(
-	playerIds: string[],
+	players: string[], // agora recebemos Player[] ao invés de string[]
 	numGroups: number,
 ): Group[] {
-	const shuffled = shuffle([...playerIds]);
+	const shuffled = shuffle([...players]);
 	const groups: Group[] = [];
-	const groupSize = Math.ceil(playerIds.length / numGroups);
+	const groupSize = Math.ceil(players.length / numGroups);
 
 	for (let i = 0; i < numGroups; i++) {
-		const groupPlayerIds = shuffled.slice(i * groupSize, (i + 1) * groupSize);
+		const groupPlayers = shuffled.slice(i * groupSize, (i + 1) * groupSize);
 		const groupId = uuid();
+
+		const matches = generateSuper8Matches(groupPlayers);
 
 		groups.push({
 			id: groupId,
 			name: `Grupo ${i + 1}`,
-			playerIds: groupPlayerIds,
-			matches: generateRoundRobinMatches(groupPlayerIds, groupId),
+			playerIds: groupPlayers,
+			matches,
 			standings: [],
 		});
 	}

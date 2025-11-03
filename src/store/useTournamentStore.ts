@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { zustandStorage } from "./storage";
-import type { Tournament } from "../core/tournament/types";
+import type { Group, Match, Tournament } from "../core/tournament/types";
 import { generateGroups } from "../core/tournament/groupGenerator";
 import { calculateStandings } from "../core/tournament/standings";
 import { uuid } from "../utils/uuid";
@@ -30,7 +30,7 @@ type TournamentState = {
 
 export const useTournamentStore = create<TournamentState>()(
 	persist(
-		(set, get) => ({
+		(set, _get) => ({
 			tournaments: [],
 
 			createTournament: (name, sport, playerIds, numGroups) => {
@@ -48,32 +48,30 @@ export const useTournamentStore = create<TournamentState>()(
 				}));
 			},
 
-			updateMatchResult: (tournamentId, groupId, matchId, scoreA, scoreB) => {
+			updateMatchResult: (
+				tournamentId: string,
+				groupId: string,
+				matchId: string,
+				scoreA: number,
+				scoreB: number,
+			) => {
 				set((state: any) => {
-					const tournaments = state.tournaments.map((t: any) => {
+					const tournaments = state.tournaments.map((t: Tournament) => {
 						if (t.id !== tournamentId) return t;
 
-						const groups = t.groups.map((g: any) => {
+						const groups = t.groups.map((g: Group) => {
 							if (g.id !== groupId) return g;
-
-							const matches = g.matches.map((m: any) =>
-								m.id === matchId
-									? {
-											...m,
-											scoreA,
-											scoreB,
-											status: "finished",
-										}
-									: m,
+							const matches = g.matches.map((round: Match[]) =>
+								round.map((m: Match) =>
+									m.id === matchId
+										? { ...m, scoreA, scoreB, status: "finished" }
+										: m,
+								),
 							);
-
-							const standings = calculateStandings(g.playerIds, matches);
-							return { ...g, matches, standings };
+							return { ...g, matches };
 						});
-
 						return { ...t, groups };
 					});
-
 					return { tournaments };
 				});
 			},

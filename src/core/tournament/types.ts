@@ -23,10 +23,12 @@ export type MatchResult = {
 export type Match = {
 	id: string;
 	groupId: string;
-	playerAId: string;
-	playerBId: string;
-	scoreA?: number;
-	scoreB?: number;
+	player1: string;
+	player2: string;
+	player3: string;
+	player4: string;
+	scoreA: number;
+	scoreB: number;
 	status: MatchStatus;
 };
 
@@ -37,9 +39,9 @@ export type PlayerStats = {
 	playerId: string;
 	wins: number;
 	losses: number;
-	pointsFor: number; // pontos feitos
-	pointsAgainst: number; // pontos sofridos
-	pointsDiff: number; // saldo
+	pointsFor?: number; // pontos feitos
+	pointsAgainst?: number; // pontos sofridos
+	pointsDiff?: number; // saldo
 };
 
 // ====================
@@ -49,7 +51,7 @@ export type Group = {
 	id: string;
 	name: string;
 	playerIds: string[];
-	matches: Match[];
+	matches: Match[][];
 	standings: PlayerStats[]; // classificação atualizada
 };
 

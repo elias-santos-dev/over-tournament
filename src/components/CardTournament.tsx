@@ -1,10 +1,11 @@
-import { View, StyleSheet } from "react-native";
+import { View, StyleSheet, Pressable } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import { Colors } from "../theme/tokens/colors";
 import { Shape } from "../theme/tokens/shape";
 import type { Tournament } from "../store";
 import Text from "./Text";
+import { Link } from "expo-router";
 
 type Props = {
 	tournament: Tournament;
@@ -12,25 +13,33 @@ type Props = {
 
 export default function CardTournament({ tournament }: Props) {
 	return (
-		<LinearGradient
-			colors={[Colors.accent.primary, Colors.accent.secundary]}
-			style={styles.container}
-			start={{ x: 0, y: 0 }}
-			end={{ x: 0.5, y: 1 }}
-		>
-			<View>
-				<Text size="lg" color="black" weight="bold">
-					{tournament.name}
-				</Text>
-				<Text size="sm" color="black">
-					{tournament.sport}
-				</Text>
-			</View>
+		<Link key={tournament.id} href={`/groups?id=${tournament.id}`} asChild>
+			<Pressable>
+				<LinearGradient
+					colors={[Colors.accent.primary, Colors.accent.secundary]}
+					start={{ x: 0, y: 0 }}
+					end={{ x: 0.5, y: 1 }}
+					style={styles.container}
+				>
+					<View>
+						<Text size="lg" color="black" weight="bold">
+							{tournament.name}
+						</Text>
+						<Text size="sm" color="black">
+							{tournament.sport}
+						</Text>
+					</View>
 
-			<View style={styles.iconContainer}>
-				<MaterialCommunityIcons name="tennis-ball" size={24} color="black" />
-			</View>
-		</LinearGradient>
+					<View style={styles.iconContainer}>
+						<MaterialCommunityIcons
+							name="tennis-ball"
+							size={24}
+							color="black"
+						/>
+					</View>
+				</LinearGradient>
+			</Pressable>
+		</Link>
 	);
 }
 

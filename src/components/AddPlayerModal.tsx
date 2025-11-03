@@ -25,7 +25,9 @@ export default function AddPlayerModal({ visible, onClose }: Props) {
 
 		if (players.length === 0) return;
 
-		players.forEach(addPlayer);
+		players.forEach((name) => {
+			addPlayer(name);
+		});
 		setNewPlayerNames("");
 		onClose();
 	};
