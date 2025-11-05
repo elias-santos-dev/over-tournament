@@ -127,18 +127,10 @@ export default function CreateTournamentScreen() {
 			);
 			return;
 		}
-
-		// montar payload: aqui assumimos que createTournament aceita (name, sport, groups)
-		// cada group: { id, name, playerIds }
-
-		// const groups = generateGroups(playerIds, numGroups);
-
 		const formatGroup: Group[] = groups.flatMap((g) =>
-			generateGroups(g.id, g.playerIds, 1),
+			generateGroups(g.name, g.playerIds, 1),
 		);
-
 		createTournament(name, sport, formatGroup);
-
 		router.canGoBack() ? router.back() : router.replace("home");
 	};
 
@@ -322,7 +314,8 @@ export default function CreateTournamentScreen() {
 					label="Criar torneio"
 					onPress={handleCreateTournament}
 					variant="primary"
-					style={[styles.button, !allGroupsValid && { opacity: 0.5 }]}
+					style={[styles.button]}
+					disabled={!allGroupsValid}
 				/>
 				<ActionButton
 					label="Voltar"

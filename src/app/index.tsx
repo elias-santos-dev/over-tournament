@@ -1,4 +1,4 @@
-import { View, TouchableHighlight } from "react-native";
+import { View, TouchableHighlight, Alert } from "react-native";
 import { Colors } from "../theme/tokens/colors";
 import { useTournamentStore } from "../store";
 import CardTournament from "../components/CardTournament";
@@ -6,7 +6,7 @@ import Text from "../components/Text";
 import ActionButton from "../components/ActionButton";
 
 export default function HomeScreen() {
-	const { tournaments, clearTournaments } = useTournamentStore();
+	const { tournaments, deleteTournament } = useTournamentStore();
 
 	return (
 		<View
@@ -14,7 +14,24 @@ export default function HomeScreen() {
 		>
 			<View style={{ flexDirection: "column", flex: 1 }}>
 				{tournaments.map((tournament) => (
-					<CardTournament key={tournament.id} tournament={tournament} />
+					<CardTournament
+						key={tournament.id}
+						tournament={tournament}
+						onLongPress={() => {
+							Alert.alert(
+								"Remover torneio",
+								`Deseja realmente remover o torneio ${tournament.name}?`,
+								[
+									{ text: "Cancelar", style: "cancel" },
+									{
+										text: "Remover",
+										style: "destructive",
+										onPress: () => deleteTournament(tournament.id),
+									},
+								],
+							);
+						}}
+					/>
 				))}
 			</View>
 

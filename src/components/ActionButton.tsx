@@ -13,12 +13,14 @@ type Props = {
 	href?: string;
 	onPress?: () => void;
 	variant?: "primary" | "secondary";
-	style?: ViewStyle | ViewStyle[]; // ✅ nova prop para customização externa
+	style?: ViewStyle | ViewStyle[];
+	disabled?: boolean;
 };
 
 const COLORS = {
 	primary: "#a3bfd4",
 	secondary: "#e6b5b8",
+	disabled: "#cccccc",
 };
 
 export default function ActionButton({
@@ -27,14 +29,20 @@ export default function ActionButton({
 	onPress,
 	variant = "primary",
 	style,
+	disabled = false,
 }: Props) {
-	const backgroundColor = COLORS[variant];
+	const backgroundColor = disabled ? COLORS.disabled : COLORS[variant];
 
 	const content = (
 		<TouchableHighlight
-			onPress={onPress}
-			underlayColor="#00000020"
-			style={[styles.button, { backgroundColor }, style]}
+			onPress={disabled ? undefined : onPress} // ✅ desativa clique
+			underlayColor={disabled ? undefined : "#00000020"} // ✅ sem underlay
+			style={[
+				styles.button,
+				{ backgroundColor, opacity: disabled ? 0.6 : 1 }, // ✅ aparência
+				style,
+			]}
+			disabled={disabled} // ✅ importante para acessibilidade
 		>
 			<Text size="md" weight="bold" color="#fff">
 				{label}
@@ -42,22 +50,18 @@ export default function ActionButton({
 		</TouchableHighlight>
 	);
 
-	// Se tiver href, usamos o Link como wrapper
-	if (href) {
+	if (href && !disabled) {
 		return (
 			<Link
 				href={href}
 				asChild
 				style={[styles.button, { backgroundColor }, style]}
 			>
-				{/* <View */}
 				{content}
-				{/* </View> */}
 			</Link>
 		);
 	}
 
-	// Caso contrário, apenas o botão normal
 	return <View style={style}>{content}</View>;
 }
 

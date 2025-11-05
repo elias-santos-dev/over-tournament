@@ -9,12 +9,13 @@ import { Link } from "expo-router";
 
 type Props = {
 	tournament: Tournament;
+	onLongPress: () => void;
 };
 
-export default function CardTournament({ tournament }: Props) {
+export default function CardTournament({ tournament, onLongPress }: Props) {
 	return (
 		<Link key={tournament.id} href={`/groups?id=${tournament.id}`} asChild>
-			<Pressable>
+			<Pressable onLongPress={() => onLongPress()} delayLongPress={400}>
 				<LinearGradient
 					colors={[Colors.accent.primary, Colors.accent.secundary]}
 					start={{ x: 0, y: 0 }}
