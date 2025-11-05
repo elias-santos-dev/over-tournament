@@ -16,6 +16,10 @@ export default function Layout() {
 				<Stack.Screen name="index" options={{ title: "Over Tournament" }} />
 				<Stack.Screen name="players/index" options={{ title: "Jogadores" }} />
 				<Stack.Screen
+					name="groups/GroupDetailsScreen"
+					options={{ title: "Detalhes do Grupo" }}
+				/>
+				<Stack.Screen
 					name="tournament/create"
 					options={{ title: "Criar torneio" }}
 				/>

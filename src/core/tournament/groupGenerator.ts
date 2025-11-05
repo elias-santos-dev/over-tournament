@@ -4,6 +4,7 @@ import { generateSuper8Matches } from "./matchGenerator";
 import { uuid } from "../../utils/uuid";
 
 export function generateGroups(
+	name: string,
 	players: string[], // agora recebemos Player[] ao invés de string[]
 	numGroups: number,
 ): Group[] {
@@ -19,7 +20,7 @@ export function generateGroups(
 
 		groups.push({
 			id: groupId,
-			name: `Grupo ${i + 1}`,
+			name: name,
 			playerIds: groupPlayers,
 			matches,
 			standings: [],

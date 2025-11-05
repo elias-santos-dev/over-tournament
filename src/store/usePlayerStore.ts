@@ -9,12 +9,13 @@ type PlayerState = {
 	addPlayer: (name: string, avatar?: string) => void;
 	editPlayer: (id: string, name: string, avatar?: string) => void;
 	removePlayer: (id: string) => void;
+	getPlayer: (id: string) => Player | undefined;
 	clearPlayers: () => void;
 };
 
 export const usePlayerStore = create<PlayerState>()(
 	persist(
-		(set) => ({
+		(set, get) => ({
 			players: [],
 
 			addPlayer: (name, avatar) =>
@@ -33,6 +34,11 @@ export const usePlayerStore = create<PlayerState>()(
 				set((state) => ({
 					players: state.players.filter((p) => p.id !== id),
 				})),
+
+			getPlayer: (id: string) => {
+				const state = get();
+				return state.players.find((p: Player) => p.id === id);
+			},
 
 			clearPlayers: () => set({ players: [] }),
 		}),

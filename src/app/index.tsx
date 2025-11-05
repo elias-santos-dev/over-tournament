@@ -6,7 +6,7 @@ import Text from "../components/Text";
 import ActionButton from "../components/ActionButton";
 
 export default function HomeScreen() {
-	const { tournaments } = useTournamentStore();
+	const { tournaments, clearTournaments } = useTournamentStore();
 
 	return (
 		<View

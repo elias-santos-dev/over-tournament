@@ -12,8 +12,7 @@ type TournamentState = {
 	createTournament: (
 		name: string,
 		sport: Tournament["sport"],
-		playerIds: string[],
-		numGroups: number,
+		groups: Group[],
 	) => void;
 
 	updateMatchResult: (
@@ -33,8 +32,7 @@ export const useTournamentStore = create<TournamentState>()(
 		(set, _get) => ({
 			tournaments: [],
 
-			createTournament: (name, sport, playerIds, numGroups) => {
-				const groups = generateGroups(playerIds, numGroups);
+			createTournament: (name, sport, groups) => {
 				const newTournament: Tournament = {
 					id: uuid(),
 					name,

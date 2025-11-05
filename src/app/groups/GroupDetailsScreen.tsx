@@ -11,12 +11,15 @@ import Text from "../../components/Text";
 import { useTournamentStore } from "../../store/useTournamentStore";
 import { Shape } from "../../theme/tokens/shape";
 import type { Match } from "../../core/tournament/types";
+import { usePlayerStore } from "../../store";
+import { Colors } from "../../theme/tokens/colors";
+import ActionButton from "../../components/ActionButton";
 
 export default function GroupDetailsScreen() {
 	const router = useRouter();
 	const { tournamentId, groupId } = useLocalSearchParams();
 	const { tournaments, updateMatchResult } = useTournamentStore();
-
+	const { getPlayer } = usePlayerStore();
 	const tournament = tournaments.find((t) => t.id === tournamentId);
 	const group = tournament?.groups.find((g) => g.id === groupId);
 
@@ -35,7 +38,6 @@ export default function GroupDetailsScreen() {
 		);
 	}
 
-	// Agora o group.matches já é Match[][] (rodadas)
 	const rounds = group.matches as Match[][];
 
 	const handleSaveScore = (match: Match) => {
@@ -52,10 +54,13 @@ export default function GroupDetailsScreen() {
 	};
 
 	const renderMatch = (match: Match) => {
-		const statusColor = match.status === "finished" ? "#D4EDDA" : "#FFF3CD";
+		const statusColor =
+			match.status === "finished"
+				? Colors.status.success
+				: Colors.status.warning;
 
-		const duoA = `${match.player1} + ${match.player2}`;
-		const duoB = `${match.player3} + ${match.player4}`;
+		const duoA = `${getPlayer(match.player1)?.name} + ${getPlayer(match.player2)?.name}`;
+		const duoB = `${getPlayer(match.player3)?.name} + ${getPlayer(match.player4)?.name}`;
 
 		let winnerText = "";
 		if (match.status === "finished") {
@@ -66,9 +71,32 @@ export default function GroupDetailsScreen() {
 
 		return (
 			<View style={[styles.matchCard, { backgroundColor: statusColor }]}>
-				<Text size="md" weight="bold">
-					{duoA} vs {duoB}
-				</Text>
+				<View
+					style={{
+						alignItems: "center",
+						flexDirection: "row",
+						justifyContent: "center",
+						gap: 10,
+					}}
+				>
+					<Text
+						size="md"
+						weight="bold"
+						style={winnerText === duoA ? styles.winnerStyle : {}}
+					>
+						{duoA}
+					</Text>
+					<Text size="md" weight="bold">
+						vs
+					</Text>
+					<Text
+						size="md"
+						weight="bold"
+						style={winnerText === duoB ? styles.winnerStyle : {}}
+					>
+						{duoB}
+					</Text>
+				</View>
 
 				<View style={styles.scoresRow}>
 					<TextInput
@@ -104,19 +132,15 @@ export default function GroupDetailsScreen() {
 							}))
 						}
 					/>
-					<TouchableOpacity
-						style={styles.saveButton}
-						onPress={() => handleSaveScore(match)}
-					>
-						<Text size="sm" weight="bold" color="#fff">
-							Salvar
-						</Text>
-					</TouchableOpacity>
 				</View>
-
+				<ActionButton
+					label="Salvar"
+					onPress={() => handleSaveScore(match)}
+					variant="primary"
+				/>
 				{winnerText ? (
-					<Text size="sm" color="#555">
-						Vencedor: {winnerText}
+					<Text size="md" color="#555" weight="bold" style={styles.winnerStyle}>
+						Vencedores: {winnerText}
 					</Text>
 				) : null}
 			</View>
@@ -128,71 +152,85 @@ export default function GroupDetailsScreen() {
 			<Text size="xl" weight="bold" style={styles.title}>
 				{tournament.name} - {group.name}
 			</Text>
-
-			{/* Abas das rodadas */}
-			<FlatList
-				horizontal
-				data={rounds}
-				keyExtractor={(_, index) => index.toString()}
-				renderItem={({ index }) => (
-					<TouchableOpacity
-						style={[
-							styles.roundTab,
-							activeRound === index && { backgroundColor: "#a3bfd4" },
-						]}
-						onPress={() => setActiveRound(index)}
-					>
-						<Text
-							size="sm"
-							weight="bold"
-							color={activeRound === index ? "#fff" : "#333"}
+			<View>
+				{/* Abas das rodadas */}
+				<FlatList
+					horizontal
+					data={rounds}
+					keyExtractor={(_, index) => index.toString()}
+					renderItem={({ index }) => (
+						<TouchableOpacity
+							style={[
+								styles.roundTab,
+								activeRound === index
+									? { backgroundColor: Colors.action.primary }
+									: { backgroundColor: Colors.action.secondary, opacity: 0.5 },
+							]}
+							onPress={() => setActiveRound(index)}
 						>
-							Rodada {index + 1}
-						</Text>
-					</TouchableOpacity>
-				)}
-				style={styles.roundTabs}
-			/>
+							<Text
+								size="sm"
+								weight="bold"
+								color={activeRound === index ? "#fff" : "#333"}
+							>
+								Rodada {index + 1}
+							</Text>
+						</TouchableOpacity>
+					)}
+					style={styles.roundTabs}
+					showsHorizontalScrollIndicator={false}
+				/>
 
-			{/* Partidas da rodada ativa */}
-			<FlatList
-				data={rounds[activeRound]}
-				keyExtractor={(item) => item.id}
-				renderItem={({ item }) => renderMatch(item)}
-				contentContainerStyle={{ paddingBottom: 80 }}
-			/>
+				{/* Partidas da rodada ativa */}
+				<FlatList
+					data={rounds[activeRound]}
+					keyExtractor={(item) => item.id}
+					renderItem={({ item }) => renderMatch(item)}
+					contentContainerStyle={{ paddingBottom: 80 }}
+				/>
+			</View>
 		</View>
 	);
 }
 
 const styles = StyleSheet.create({
-	container: { flex: 1, padding: 20, backgroundColor: "#F8F8F8" },
+	container: {
+		flex: 1,
+		padding: 20,
+		backgroundColor: Colors.base.background,
+	},
 	title: { marginBottom: 20 },
 	roundTabs: { flexDirection: "row", marginBottom: 15 },
 	roundTab: {
+		marginRight: 10,
 		paddingHorizontal: 15,
 		paddingVertical: 8,
 		borderRadius: Shape.radiusMd,
-		backgroundColor: "#E0E0E0",
-		marginRight: 8,
+		backgroundColor: Colors.base.background,
+		height: 150,
 	},
 	matchCard: {
 		backgroundColor: "#FFF",
 		padding: 15,
+		gap: 10,
 		borderRadius: Shape.radiusMd,
 		borderWidth: 1,
 		borderColor: "#E0E0E0",
 		marginBottom: 12,
 	},
-	scoresRow: { flexDirection: "row", alignItems: "center", marginTop: 10 },
+	scoresRow: {
+		flexDirection: "row",
+		alignItems: "center",
+		justifyContent: "center",
+		marginTop: 10,
+		gap: 20,
+	},
 	scoreInput: {
-		width: 50,
-		height: 35,
+		width: 40,
+		height: 40,
 		borderWidth: 1,
-		borderColor: "#E0E0E0",
 		borderRadius: Shape.radiusSm,
-		paddingHorizontal: 8,
-		marginRight: 5,
+		paddingHorizontal: 2,
 		textAlign: "center",
 	},
 	saveButton: {
@@ -201,5 +239,10 @@ const styles = StyleSheet.create({
 		paddingHorizontal: 12,
 		paddingVertical: 8,
 		borderRadius: Shape.radiusSm,
+	},
+	winnerStyle: {
+		textShadowColor: Colors.accent.primary,
+		textShadowOffset: { width: 1, height: 1 },
+		textShadowRadius: 3,
 	},
 });

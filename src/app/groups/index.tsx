@@ -4,6 +4,7 @@ import { useRouter, useLocalSearchParams } from "expo-router";
 import Text from "../../components/Text";
 import { useTournamentStore } from "../../store/useTournamentStore";
 import { Shape } from "../../theme/tokens/shape";
+import type { Match } from "../../core/tournament/types";
 
 export default function GroupsScreen() {
 	const router = useRouter();
@@ -29,11 +30,14 @@ export default function GroupsScreen() {
 	};
 
 	const renderGroup = ({ item }: { item: (typeof tournament.groups)[0] }) => {
-		const totalMatches = item.matches.length;
-		const playedMatches = item.matches.filter(
+		const allMatches: Match[] = Array.isArray(item.matches[0])
+			? (item.matches as Match[][]).flat()
+			: (item.matches as unknown as Match[]);
+
+		const totalMatches = allMatches.length;
+		const playedMatches = allMatches.filter(
 			(m) => m.status === "finished",
 		).length;
-
 		return (
 			<TouchableOpacity
 				style={styles.groupCard}
