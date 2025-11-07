@@ -1,250 +1,261 @@
-import React, { useMemo, useState, useEffect, useCallback } from "react";
+import React, { useMemo, useState, useCallback } from "react";
 import {
 	View,
 	FlatList,
 	TextInput,
-	Modal,
 	StyleSheet,
 	TouchableOpacity,
 } from "react-native";
-import { usePlayerStore } from "../../store/usePlayerStore";
-import { Colors } from "../../theme/tokens/colors";
-import ActionButton from "../../components/ActionButton";
-import { MaterialCommunityIcons } from "@expo/vector-icons";
-import Text from "../../components/Text";
 import { LinearGradient } from "expo-linear-gradient";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { usePlayerStore } from "../../store/usePlayerStore";
+import { Colors } from "../../theme/tokens/colorsV2";
+import Text from "../../components/Text";
+import ActionButton from "../../components/ActionButton";
 import AddPlayerModal from "../../components/AddPlayerModal";
 import DeletePlayerModal from "../../components/DeletePlayerModal";
-
-export const options = { title: "Jogadores 🎾" };
+import type { Player } from "../../store/types";
 
 const PAGE_SIZE = 10;
 
 export default function PlayersScreen() {
-	const { players, addPlayer, editPlayer, removePlayer } = usePlayerStore();
-
-	const [search, setSearch] = useState("");
+	const { players, editPlayer } = usePlayerStore();
 	const [page, setPage] = useState(1);
+	const [search, setSearch] = useState("");
 	const [editingId, setEditingId] = useState<string | null>(null);
 	const [editingName, setEditingName] = useState("");
-	const [isAddModalVisible, setAddModalVisible] = useState(false);
+	const [selectedPlayerId, setSelectedPlayerId] = useState<string | null>(null);
 	const [isDeleteModalVisible, setDeleteModalVisible] = useState(false);
-	const [playerToDelete, setPlayerToDelete] = useState<string>("");
-
-	useEffect(() => setPage(1), []);
+	const [isAddModalVisible, setAddModalVisible] = useState(false);
 
 	const filteredPlayers = useMemo(() => {
-		if (!search.trim()) return players;
-		return players.filter((p) =>
+		const filtered = players.filter((p) =>
 			p.name.toLowerCase().includes(search.toLowerCase()),
 		);
-	}, [players, search]);
+		return filtered.slice(0, page * PAGE_SIZE);
+	}, [players, search, page]);
 
-	const visiblePlayers = useMemo(() => {
-		const end = page * PAGE_SIZE;
-		return filteredPlayers.slice(0, end);
-	}, [filteredPlayers, page]);
+	const handleLoadMore = () => {
+		setPage((prev) => prev + 1);
+	};
 
-	const handleLoadMore = useCallback(() => {
-		const maxPages = Math.ceil(filteredPlayers.length / PAGE_SIZE);
-		if (page < maxPages) setPage((p) => p + 1);
-	}, [filteredPlayers.length, page]);
-
-	const handleEdit = (id: string, name: string) => {
+	const handleEdit = useCallback((id: string, name: string) => {
 		setEditingId(id);
 		setEditingName(name);
-	};
+	}, []);
 
-	const handleSaveEdit = () => {
-		if (editingId && editingName.trim()) {
-			editPlayer(editingId, editingName.trim());
-			setEditingId(null);
-			setEditingName("");
-		}
-	};
-
-	const handleCancelEdit = () => {
+	const handleSaveEdit = useCallback(() => {
+		if (!editingId || !editingName.trim()) return;
+		editPlayer(editingId, editingName.trim());
 		setEditingId(null);
 		setEditingName("");
-	};
+	}, [editingId, editingName, editPlayer]);
 
-	const handleDelete = (id: string) => {
-		setPlayerToDelete(id);
+	const handleCancelEdit = useCallback(() => {
+		setEditingId(null);
+		setEditingName("");
+	}, []);
+
+	const handleDelete = useCallback((id: string) => {
+		setSelectedPlayerId(id);
 		setDeleteModalVisible(true);
-	};
+	}, []);
 
-	// === Render ===
-	const renderItem = ({ item }: { item: (typeof players)[number] }) => {
-		if (editingId === item.id) {
-			return (
-				<LinearGradient
-					colors={[Colors.action.secondary, Colors.action.primary]}
-					start={{ x: 0, y: 0 }}
-					end={{ x: 0.5, y: 1 }}
-					style={editStyles.row}
-				>
-					<View style={editStyles.editContainer}>
-						<TextInput
-							style={editStyles.editInput}
-							value={editingName}
-							onChangeText={setEditingName}
-							placeholder="Nome"
-						/>
-					</View>
-
-					<View style={editStyles.actions}>
-						<TouchableOpacity onPress={handleSaveEdit}>
-							<MaterialCommunityIcons
-								name="content-save"
-								size={24}
-								color={Colors.iconsColor.primary}
-							/>
-						</TouchableOpacity>
-						<TouchableOpacity onPress={handleCancelEdit}>
-							<MaterialCommunityIcons
-								name="cancel"
-								size={24}
-								color={Colors.iconsColor.primary}
-							/>
-						</TouchableOpacity>
-					</View>
-				</LinearGradient>
-			);
-		}
-
-		return (
-			<LinearGradient
-				colors={[Colors.action.secondary, Colors.action.primary]}
-				start={{ x: 0, y: 0 }}
-				end={{ x: 0.5, y: 1 }}
-				style={styles.row}
-			>
-				<View style={styles.playerInfo}>
-					<Text size="md" weight="bold" color={Colors.base.text}>
-						{item.name}
-					</Text>
-				</View>
-
-				<View style={styles.actions}>
-					<TouchableOpacity onPress={() => handleEdit(item.id, item.name)}>
-						<MaterialCommunityIcons
-							name="account-edit"
-							size={24}
-							color={Colors.iconsColor.primary}
-						/>
-					</TouchableOpacity>
-					<TouchableOpacity onPress={() => handleDelete(item.id)}>
-						<MaterialCommunityIcons
-							name="delete"
-							size={24}
-							color={Colors.iconsColor.primary}
-						/>
-					</TouchableOpacity>
-				</View>
-			</LinearGradient>
-		);
-	};
+	const renderItem = useCallback(
+		({ item }: { item: Player }) => (
+			<PlayerRow
+				item={item}
+				editingId={editingId}
+				editingName={editingName}
+				onEdit={handleEdit}
+				onSave={handleSaveEdit}
+				onCancel={handleCancelEdit}
+				onDelete={handleDelete}
+				setEditingName={setEditingName}
+			/>
+		),
+		[
+			editingId,
+			editingName,
+			handleEdit,
+			handleSaveEdit,
+			handleCancelEdit,
+			handleDelete,
+		],
+	);
 
 	return (
-		<View style={styles.container}>
+		<SafeAreaView style={styles.container}>
 			<TextInput
+				style={styles.searchInput}
 				placeholder="Buscar jogador..."
 				value={search}
 				onChangeText={setSearch}
-				style={styles.search}
-				placeholderTextColor="#666"
 			/>
 
 			<FlatList
-				data={visiblePlayers}
+				data={filteredPlayers}
 				keyExtractor={(item) => item.id}
 				renderItem={renderItem}
-				style={styles.list}
-				contentContainerStyle={{ paddingBottom: 24 }}
 				onEndReached={handleLoadMore}
-				onEndReachedThreshold={0.4}
-				ListEmptyComponent={<Text>Nenhum jogador encontrado</Text>}
+				onEndReachedThreshold={0.3}
+				contentContainerStyle={{ paddingBottom: 100 }}
+				ListEmptyComponent={
+					<View style={styles.emptyContainer}>
+						<Text size="md" color={Colors.text.secondary}>
+							Nenhum jogador encontrado
+						</Text>
+					</View>
+				}
 			/>
 
-			<View style={styles.footer}>
-				<ActionButton
-					label="+ Adicionar Jogador"
-					onPress={() => setAddModalVisible(true)}
-					variant="primary"
-					style={{ width: "100%" }}
-				/>
-			</View>
+			<ActionButton
+				label="Adicionar Jogador"
+				onPress={() => setAddModalVisible(true)}
+			/>
 
-			{/* Modal Adicionar */}
 			<AddPlayerModal
 				visible={isAddModalVisible}
 				onClose={() => setAddModalVisible(false)}
 			/>
 
-			{/* Modal de Exclusão */}
 			<DeletePlayerModal
-				playerId={playerToDelete}
 				visible={isDeleteModalVisible}
 				onClose={() => setDeleteModalVisible(false)}
-				message="Tem certeza que deseja remover este jogador?"
+				playerId={selectedPlayerId && ""}
 			/>
-		</View>
+		</SafeAreaView>
 	);
 }
 
-// === Estilos gerais ===
-const styles = StyleSheet.create({
-	container: { flex: 1, padding: 16, backgroundColor: Colors.base.background },
-	search: {
-		backgroundColor: "#fff",
-		borderRadius: 8,
-		paddingHorizontal: 12,
-		paddingVertical: 8,
-		borderColor: "#ddd",
-		borderWidth: 1,
-		marginBottom: 12,
-	},
-	list: { flex: 1 },
-	row: {
-		flexDirection: "row",
-		justifyContent: "space-between",
-		borderRadius: 12,
-		paddingHorizontal: 15,
-		paddingVertical: 12,
-		marginBottom: 12,
-	},
-	playerInfo: { flexDirection: "row", alignItems: "center", flex: 4 },
-	actions: { flexDirection: "row", alignItems: "center", gap: 16 },
-	footer: { marginTop: 12 },
-});
+const PlayerRow = React.memo(
+	({
+		item,
+		editingId,
+		editingName,
+		onEdit,
+		onSave,
+		onCancel,
+		onDelete,
+		setEditingName,
+	}: {
+		item: Player;
+		editingId: string | null;
+		editingName: string;
+		onEdit: (id: string, name: string) => void;
+		onSave: () => void;
+		onCancel: () => void;
+		onDelete: (id: string) => void;
+		setEditingName: (name: string) => void;
+	}) => {
+		const isEditing = editingId === item.id;
 
-// === Estilos da edição inline ===
-const editStyles = StyleSheet.create({
-	row: {
+		return (
+			<LinearGradient
+				colors={
+					isEditing
+						? [Colors.action.primary, Colors.action.secondary]
+						: [Colors.action.secondary, Colors.action.primary]
+				}
+				start={{ x: 0, y: 0 }}
+				end={{ x: 1, y: 1 }}
+				style={styles.playerContainer}
+			>
+				{isEditing ? (
+					<View style={styles.playerRow}>
+						<TextInput
+							style={styles.editInput}
+							value={editingName}
+							onChangeText={setEditingName}
+							autoFocus
+							placeholder="Nome"
+						/>
+						<View style={styles.actions}>
+							<TouchableOpacity onPress={onSave}>
+								<Text size="md" weight="bold" color={Colors.text.primary}>
+									Salvar
+								</Text>
+							</TouchableOpacity>
+							<TouchableOpacity onPress={onCancel}>
+								<Text size="md" weight="bold" color={Colors.text.primary}>
+									Cancelar
+								</Text>
+							</TouchableOpacity>
+						</View>
+					</View>
+				) : (
+					<View style={styles.playerRow}>
+						<Text size="md" weight="bold" color={Colors.text.primary}>
+							{item.name}
+						</Text>
+						<View style={styles.actions}>
+							<TouchableOpacity onPress={() => onEdit(item.id, item.name)}>
+								<Text size="md" weight="bold" color={Colors.text.primary}>
+									Editar
+								</Text>
+							</TouchableOpacity>
+							<TouchableOpacity onPress={() => onDelete(item.id)}>
+								<Text size="md" weight="bold" color={Colors.text.secondary}>
+									Excluir
+								</Text>
+							</TouchableOpacity>
+						</View>
+					</View>
+				)}
+			</LinearGradient>
+		);
+	},
+);
+
+PlayerRow.displayName = "PlayerRow";
+
+const styles = StyleSheet.create({
+	container: {
+		flex: 1,
+		backgroundColor: Colors.surface.allwaysWhite,
+		padding: 16,
+	},
+	searchInput: {
+		borderRadius: 12,
+		padding: 12,
+		marginBottom: 12,
+		borderColor: Colors.input.border,
+		backgroundColor: Colors.input.background,
+		borderWidth: 1,
+	},
+	playerContainer: {
+		borderRadius: 12,
+		marginBottom: 10,
+		padding: 15,
+		paddingVertical: 15,
+	},
+	playerRow: {
 		flexDirection: "row",
 		justifyContent: "space-between",
-		borderRadius: 12,
-		paddingHorizontal: 15,
-		paddingVertical: 12,
-		marginBottom: 12,
+		alignItems: "center",
 	},
 	editContainer: {
 		flexDirection: "row",
 		alignItems: "center",
-		flex: 4,
-		marginRight: 16,
+		gap: 8,
 	},
 	editInput: {
-		backgroundColor: Colors.base.background,
-		borderRadius: 8,
+		flex: 1,
+		backgroundColor: Colors.input.background,
 		borderWidth: 1,
-		borderColor: Colors.base.border,
+		borderColor: Colors.input.border,
+
+		borderRadius: 8,
 		padding: 8,
-		width: "100%",
+		marginRight: 15,
+		color: Colors.text.primary,
 	},
 	actions: {
 		flexDirection: "row",
-		alignItems: "center",
 		gap: 16,
+	},
+	emptyContainer: {
+		alignItems: "center",
+		marginTop: 40,
 	},
 });

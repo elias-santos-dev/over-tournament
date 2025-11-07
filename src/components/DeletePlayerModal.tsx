@@ -9,7 +9,7 @@ import { Shape } from "../theme/tokens/shape";
 import { usePlayerStore } from "../store";
 
 type Props = {
-	playerId: string;
+	playerId: string | null;
 	visible: boolean;
 	onClose: () => void;
 	message?: string;
@@ -24,8 +24,10 @@ export default function DeletePlayerModal({
 	const { removePlayer } = usePlayerStore();
 
 	const confirmDeletePlayer = () => {
-		removePlayer(playerId);
-		onClose();
+		if (playerId) {
+			removePlayer(playerId);
+			onClose();
+		}
 	};
 	return (
 		<Modal visible={visible} transparent animationType="fade">

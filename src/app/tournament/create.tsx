@@ -1,5 +1,5 @@
-// src/screens/CreateTournamentScreen.tsx
-import React, { useState, useMemo } from "react";
+import type React from "react";
+import { useState, useMemo, useCallback } from "react";
 import {
 	View,
 	TextInput,
@@ -8,20 +8,29 @@ import {
 	TouchableOpacity,
 	Alert,
 	ScrollView,
+	type ListRenderItem,
 } from "react-native";
 import { useRouter } from "expo-router";
+import { LinearGradient } from "expo-linear-gradient";
+
 import Text from "../../components/Text";
 import ActionButton from "../../components/ActionButton";
+import AddPlayerModal from "../../components/AddPlayerModal";
+
 import { useTournamentStore } from "../../store/useTournamentStore";
 import { usePlayerStore } from "../../store/usePlayerStore";
+
+import { Colors } from "../../theme/tokens/colorsV2";
+import { Space } from "../../theme/tokens/space";
 import { Shape } from "../../theme/tokens/shape";
-import type { Tournament } from "../../store/types";
-import AddPlayerModal from "../../components/AddPlayerModal";
-import { Colors } from "../../theme/tokens/colors";
-import { LinearGradient } from "expo-linear-gradient";
+import { Font } from "../../theme/tokens/font";
+
 import { uuid } from "../../utils/uuid";
 import { generateGroups } from "../../core/tournament/groupGenerator";
+
+import type { Tournament } from "../../store/types";
 import type { Group } from "../../core/tournament/types";
+import type { Player } from "../../store/types";
 
 type GroupDraft = {
 	id: string;
@@ -29,28 +38,25 @@ type GroupDraft = {
 	playerIds: string[];
 };
 
-export default function CreateTournamentScreen() {
+const MIN_PLAYERS_PER_GROUP = 4;
+
+const CreateTournamentScreen: React.FC = () => {
 	const router = useRouter();
 	const { createTournament } = useTournamentStore();
 	const { players } = usePlayerStore();
 
 	const [step, setStep] = useState<1 | 2>(1);
-
 	const [name, setName] = useState("");
 	const [sport, setSport] = useState<Tournament["sport"]>(
 		"Beach Tennis" as Tournament["sport"],
 	);
-
 	const [isAddModalVisible, setAddModalVisible] = useState(false);
 	const [search, setSearch] = useState("");
-
-	// grupos manuais
-	const [groups, setGroups] = useState<GroupDraft[]>(() => [
+	const [groups, setGroups] = useState<GroupDraft[]>([
 		{ id: uuid(), name: "Grupo 1", playerIds: [] },
 	]);
 	const [activeGroupIndex, setActiveGroupIndex] = useState(0);
 
-	// filtro jogadores
 	const filteredPlayers = useMemo(() => {
 		if (!search.trim()) return players;
 		return players.filter((p) =>
@@ -58,33 +64,39 @@ export default function CreateTournamentScreen() {
 		);
 	}, [players, search]);
 
-	// helpers de validação por grupo: mínimo 4 e par
-	const isGroupValid = (g: GroupDraft) =>
-		g.playerIds.length >= 4 && g.playerIds.length % 2 === 0;
+	const isGroupValid = useCallback(
+		(g: GroupDraft) =>
+			g.playerIds.length >= MIN_PLAYERS_PER_GROUP &&
+			g.playerIds.length % 2 === 0,
+		[],
+	);
 
 	const allGroupsValid = groups.length > 0 && groups.every(isGroupValid);
 
-	// toggle jogador no grupo ativo (remove de outros grupos)
-	const togglePlayerInActiveGroup = (playerId: string) => {
-		setGroups((prev) =>
-			prev.map((g, idx) => {
-				if (idx === activeGroupIndex) {
-					const has = g.playerIds.includes(playerId);
+	const togglePlayerInActiveGroup = useCallback(
+		(playerId: string) => {
+			setGroups((prev) =>
+				prev.map((g, idx) => {
+					if (idx === activeGroupIndex) {
+						const has = g.playerIds.includes(playerId);
+						return {
+							...g,
+							playerIds: has
+								? g.playerIds.filter((id) => id !== playerId)
+								: [...g.playerIds, playerId],
+						};
+					}
 					return {
 						...g,
-						playerIds: has
-							? g.playerIds.filter((id) => id !== playerId)
-							: [...g.playerIds, playerId],
+						playerIds: g.playerIds.filter((id) => id !== playerId),
 					};
-				}
-				// remover de outros grupos para garantir exclusividade
-				return { ...g, playerIds: g.playerIds.filter((id) => id !== playerId) };
-			}),
-		);
-	};
+				}),
+			);
+		},
+		[activeGroupIndex],
+	);
 
-	// adicionar novo grupo vazio
-	const handleAddGroup = () => {
+	const handleAddGroup = useCallback(() => {
 		setGroups((prev) => {
 			const nextIndex = prev.length + 1;
 			return [
@@ -92,34 +104,35 @@ export default function CreateTournamentScreen() {
 				{ id: uuid(), name: `Grupo ${nextIndex}`, playerIds: [] },
 			];
 		});
-		setActiveGroupIndex(groups.length); // ativa o novo grupo
-	};
+		setActiveGroupIndex(groups.length);
+	}, [groups.length]);
 
-	// renomear grupo (simples) - opcional, aqui mantemos padrão "Grupo X"
-	const handleRemoveGroup = (index: number) => {
-		if (groups.length === 1) {
-			Alert.alert("Atenção", "Deve existir ao menos um grupo.");
-			return;
-		}
-		setGroups((prev) => {
-			const next = prev.filter((_, i) => i !== index);
-			// reindexar nomes
-			return next.map((g, i) => ({ ...g, name: `Grupo ${i + 1}` }));
-		});
-		setActiveGroupIndex((old) => Math.max(0, Math.min(groups.length - 2, old)));
-	};
+	const handleRemoveGroup = useCallback(
+		(index: number) => {
+			if (groups.length === 1) {
+				Alert.alert("Atenção", "Deve existir ao menos um grupo.");
+				return;
+			}
+			setGroups((prev) => {
+				const next = prev.filter((_, i) => i !== index);
+				return next.map((g, i) => ({ ...g, name: `Grupo ${i + 1}` }));
+			});
+			setActiveGroupIndex((old) =>
+				Math.max(0, Math.min(groups.length - 2, old)),
+			);
+		},
+		[groups.length],
+	);
 
-	// avançar etapa 1 -> 2
-	const handleNextStep = () => {
+	const handleNextStep = useCallback(() => {
 		if (!name.trim()) {
 			Alert.alert("Atenção", "Dê um nome ao torneio.");
 			return;
 		}
 		setStep(2);
-	};
+	}, [name]);
 
-	// criar torneio: valida todos os grupos e chama createTournament com os grupos
-	const handleCreateTournament = () => {
+	const handleCreateTournament = useCallback(() => {
 		if (!allGroupsValid) {
 			Alert.alert(
 				"Atenção",
@@ -132,14 +145,14 @@ export default function CreateTournamentScreen() {
 		);
 		createTournament(name, sport, formatGroup);
 		router.canGoBack() ? router.back() : router.replace("home");
-	};
+	}, [allGroupsValid, createTournament, groups, name, sport, router]);
 
-	// Aux: checar em qual grupo está um jogador (retorna -1 se nenhum)
-	const findGroupIndexOfPlayer = (playerId: string) => {
-		return groups.findIndex((g) => g.playerIds.includes(playerId));
-	};
+	const findGroupIndexOfPlayer = useCallback(
+		(playerId: string) =>
+			groups.findIndex((g) => g.playerIds.includes(playerId)),
+		[groups],
+	);
 
-	// Etapa 1: configuração básica
 	if (step === 1) {
 		return (
 			<View style={styles.container}>
@@ -171,8 +184,52 @@ export default function CreateTournamentScreen() {
 		);
 	}
 
-	// Etapa 2: montagem manual dos grupos
 	const activeGroup = groups[activeGroupIndex];
+
+	const renderPlayer: ListRenderItem<Player> = ({ item }) => {
+		const assignedGroupIndex = findGroupIndexOfPlayer(item.id);
+		const isInActive = assignedGroupIndex === activeGroupIndex;
+		const isAssignedElsewhere =
+			assignedGroupIndex !== -1 && assignedGroupIndex !== activeGroupIndex;
+
+		return (
+			<View>
+				{isInActive ? (
+					<LinearGradient
+						colors={[
+							Colors.button.secondary.background,
+							Colors.button.primary.background,
+						]} // use .background color value
+						start={{ x: 0, y: 0 }}
+						end={{ x: 0.5, y: 1 }}
+						style={styles.playerItem}
+					>
+						<TouchableOpacity
+							onPress={() => togglePlayerInActiveGroup(item.id)}
+							accessibilityLabel={`Remover ${item.name} do grupo`}
+						>
+							<Text size="md" color={Colors.text.inverse}>
+								{item.name}
+							</Text>
+						</TouchableOpacity>
+					</LinearGradient>
+				) : (
+					<TouchableOpacity
+						style={[
+							styles.playerItem,
+							isAssignedElsewhere && styles.playerItemDisabled,
+						]}
+						onPress={() => togglePlayerInActiveGroup(item.id)}
+						accessibilityLabel={`Adicionar ${item.name} ao grupo`}
+					>
+						<Text size="md" color={Colors.text.primary}>
+							{item.name}
+						</Text>
+					</TouchableOpacity>
+				)}
+			</View>
+		);
+	};
 
 	return (
 		<View style={styles.container}>
@@ -185,28 +242,24 @@ export default function CreateTournamentScreen() {
 				Montar Grupos
 			</Text>
 
-			{/* abas de grupos + add/remove */}
+			{/* Tabs de grupos */}
 			<ScrollView
 				horizontal
 				showsHorizontalScrollIndicator={false}
-				style={{ marginBottom: 12 }}
+				style={styles.groupsScroll}
 			>
 				{groups.map((g, idx) => {
 					const valid = isGroupValid(g);
+					const isActive = activeGroupIndex === idx;
 					return (
 						<TouchableOpacity
 							key={g.id}
 							onPress={() => setActiveGroupIndex(idx)}
 							style={[
 								styles.groupTab,
-								activeGroupIndex === idx && {
-									backgroundColor: Colors.action.primary,
-								},
-								valid && { borderColor: Colors.status.success },
-								!valid &&
-									g.playerIds.length > 0 && {
-										borderColor: Colors.status.error,
-									},
+								isActive && styles.groupTabActive,
+								valid && styles.groupTabValid,
+								!valid && g.playerIds.length > 0 && styles.groupTabInvalid,
 							]}
 							onLongPress={() => {
 								if (groups.length > 1) {
@@ -224,12 +277,12 @@ export default function CreateTournamentScreen() {
 									);
 								}
 							}}
-							delayLongPress={400} // <- toque longo (~0.4s)
+							delayLongPress={400}
 						>
 							<Text
 								size="sm"
 								weight="bold"
-								color={activeGroupIndex === idx ? "#fff" : "#333"}
+								color={isActive ? Colors.text.inverse : Colors.text.primary}
 							>
 								{g.name} ({g.playerIds.length})
 							</Text>
@@ -240,6 +293,7 @@ export default function CreateTournamentScreen() {
 				<TouchableOpacity
 					onPress={handleAddGroup}
 					style={[styles.groupTab, styles.addGroupTab]}
+					accessibilityLabel="Adicionar novo grupo"
 				>
 					<Text size="sm" weight="bold">
 						+ Grupo
@@ -259,54 +313,18 @@ export default function CreateTournamentScreen() {
 					value={search}
 					onChangeText={setSearch}
 				/>
-				<ActionButton label="Add" onPress={() => setAddModalVisible(true)} />
+				<ActionButton
+					label="Add"
+					onPress={() => setAddModalVisible(true)}
+					variant="primary"
+				/>
 			</View>
 
 			<FlatList
 				data={filteredPlayers}
 				keyExtractor={(item) => item.id}
-				contentContainerStyle={{ paddingBottom: 120 }}
-				renderItem={({ item }) => {
-					const assignedGroupIndex = findGroupIndexOfPlayer(item.id);
-					const isInActive = assignedGroupIndex === activeGroupIndex;
-					const isAssignedElsewhere =
-						assignedGroupIndex !== -1 &&
-						assignedGroupIndex !== activeGroupIndex;
-
-					// botão de toggle: se estiver em outro grupo, ao clicar vai mover para o ativo
-					return (
-						<View>
-							{isInActive ? (
-								<LinearGradient
-									colors={[Colors.action.secondary, Colors.action.primary]}
-									start={{ x: 0, y: 0 }}
-									end={{ x: 0.5, y: 1 }}
-									style={styles.playerItem}
-								>
-									<TouchableOpacity
-										onPress={() => togglePlayerInActiveGroup(item.id)}
-									>
-										<Text size="md" color={Colors.base.textSecundary}>
-											{item.name}
-										</Text>
-									</TouchableOpacity>
-								</LinearGradient>
-							) : (
-								<TouchableOpacity
-									style={[
-										styles.playerItem,
-										isAssignedElsewhere && { opacity: 0.6 }, // visual para quem tá em outro grupo
-									]}
-									onPress={() => togglePlayerInActiveGroup(item.id)}
-								>
-									<Text size="md" color={Colors.base.text}>
-										{item.name}
-									</Text>
-								</TouchableOpacity>
-							)}
-						</View>
-					);
-				}}
+				contentContainerStyle={{ paddingBottom: Space.xxl }}
+				renderItem={renderPlayer}
 			/>
 
 			<View style={styles.footerRow}>
@@ -314,88 +332,106 @@ export default function CreateTournamentScreen() {
 					label="Criar torneio"
 					onPress={handleCreateTournament}
 					variant="primary"
-					style={[styles.button]}
 					disabled={!allGroupsValid}
 				/>
 				<ActionButton
 					label="Voltar"
 					onPress={() => setStep(1)}
 					variant="secondary"
-					style={styles.button}
 				/>
 			</View>
 		</View>
 	);
-}
+};
+
+export default CreateTournamentScreen;
 
 const styles = StyleSheet.create({
 	container: {
 		flex: 1,
-		padding: 20,
-		backgroundColor: "#F8F8F8",
+		padding: Space.lg,
+		backgroundColor: Colors.surface.background, // ✅ token aplicado
 	},
 	title: {
-		marginBottom: 20,
+		marginBottom: Space.md,
 	},
 	input: {
-		backgroundColor: "#fff",
+		backgroundColor: Colors.surface.elevated, // ✅ branco padronizado
 		borderWidth: 1,
-		borderColor: "#E0E0E0",
+		borderColor: Colors.surface.border,
 		borderRadius: Shape.radiusMd,
-		paddingHorizontal: 12,
-		paddingVertical: 10,
-		fontSize: 16,
-		marginBottom: 10,
+		paddingHorizontal: Space.md,
+		paddingVertical: Space.sm,
+		fontSize: Font.size.md,
+		fontFamily: Font.family.primary,
+		marginBottom: Space.sm,
+		color: Colors.text.primary,
 	},
 	subtitle: {
-		marginVertical: 8,
+		marginVertical: Space.sm,
 	},
 	row: {
 		flexDirection: "row",
 		justifyContent: "space-between",
+		alignItems: "center",
 	},
 	searchInput: {
-		backgroundColor: "#fff",
+		backgroundColor: Colors.surface.elevated,
 		borderWidth: 1,
-		borderColor: "#E0E0E0",
+		borderColor: Colors.surface.border,
 		borderRadius: Shape.radiusMd,
-		paddingHorizontal: 12,
-		paddingVertical: 10,
-		fontSize: 16,
-		marginBottom: 10,
+		paddingHorizontal: Space.md,
+		paddingVertical: Space.sm,
+		fontSize: Font.size.md,
+		color: Colors.text.primary,
 		width: "80%",
 	},
 	playerItem: {
-		backgroundColor: "#fff",
-		padding: 12,
+		backgroundColor: Colors.surface.elevated,
+		padding: Space.md,
 		borderRadius: Shape.radiusSm,
 		borderWidth: 1,
-		borderColor: "#E0E0E0",
-		marginBottom: 8,
+		borderColor: Colors.surface.border,
+		marginBottom: Space.xs,
 	},
-	button: {
-		marginTop: 12,
+	playerItemDisabled: {
+		opacity: 0.6,
 	},
 	groupTab: {
-		paddingHorizontal: 12,
-		paddingVertical: 8,
+		paddingHorizontal: Space.md,
+		paddingVertical: Space.sm,
 		borderRadius: Shape.radiusMd,
-		backgroundColor: "#EDEDED",
-		marginRight: 8,
+		backgroundColor: Colors.surface.elevated,
+		marginRight: Space.xs,
 		borderWidth: 2,
 		borderColor: "transparent",
 	},
+	groupTabActive: {
+		backgroundColor: Colors.button.primary.background,
+	},
+	groupTabValid: {
+		borderColor: Colors.status.success.background,
+	},
+	groupTabInvalid: {
+		borderColor: Colors.status.error.background,
+	},
 	addGroupTab: {
-		backgroundColor: "#FFF",
+		backgroundColor: Colors.surface.elevated,
 		borderStyle: "dashed",
+	},
+	groupsScroll: {
+		marginBottom: Space.sm,
 	},
 	footerRow: {
 		position: "absolute",
-		left: 20,
-		right: 20,
-		bottom: 20,
+		left: Space.lg,
+		right: Space.lg,
+		bottom: Space.lg,
 		flexDirection: "row",
-		gap: 12,
+		gap: Space.sm,
 		justifyContent: "space-between",
+	},
+	button: {
+		marginTop: Space.md,
 	},
 });

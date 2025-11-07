@@ -15,6 +15,8 @@ type Props = {
 	variant?: "primary" | "secondary";
 	style?: ViewStyle | ViewStyle[];
 	disabled?: boolean;
+	testID?: string;
+	accessibilityLabel?: string;
 };
 
 const COLORS = {

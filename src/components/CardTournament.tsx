@@ -8,6 +8,7 @@ import Text from "./Text";
 import { Link } from "expo-router";
 
 type Props = {
+	testID: string;
 	tournament: Tournament;
 	onLongPress: () => void;
 };
