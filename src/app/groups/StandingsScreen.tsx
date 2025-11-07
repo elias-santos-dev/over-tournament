@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useCallback } from "react";
-import { View, FlatList, StyleSheet, TouchableOpacity } from "react-native";
-import { useLocalSearchParams, useRouter } from "expo-router";
+import { View, FlatList, StyleSheet } from "react-native";
+import { useLocalSearchParams } from "expo-router";
 import Text from "../../components/Text";
 import {
 	type TournamentState,
@@ -9,11 +9,9 @@ import {
 import { usePlayerStore } from "../../store/usePlayerStore";
 import { Colors } from "../../theme/tokens/colorsV2";
 import { Space } from "../../theme/tokens/space";
-import { Shape } from "../../theme/tokens/shape";
 import type { PlayerStats } from "../../core/tournament/types";
 
 export default function StandingsScreen() {
-	const router = useRouter();
 	const { tournamentId, groupId } = useLocalSearchParams() as {
 		tournamentId?: string;
 		groupId?: string;
@@ -37,9 +35,7 @@ export default function StandingsScreen() {
 
 	useEffect(() => {
 		if (!group || !tournamentId) return;
-		if (typeof updateStandings === "function") {
-			updateStandings(group.id, tournamentId);
-		}
+		updateStandings?.(group.id, tournamentId);
 	}, []);
 
 	const standings: PlayerStats[] = useMemo(
@@ -77,6 +73,19 @@ export default function StandingsScreen() {
 			</View>
 		);
 	}
+
+	// Função para identificar o critério de desempate entre dois jogadores
+	const getTiebreak = (current: PlayerStats, previous?: PlayerStats) => {
+		if (!previous) return "-";
+		if (current.wins !== previous.wins) return "V"; // Vitórias
+		if (
+			(current.pointsFor ?? 0) - (current.pointsAgainst ?? 0) !==
+			(previous.pointsFor ?? 0) - (previous.pointsAgainst ?? 0)
+		)
+			return "Dif"; // Saldo de games
+		if (current.pointsFor !== previous.pointsFor) return "+"; // Games a favor
+		return "CD"; // Confronto direto
+	};
 
 	return (
 		<View style={styles.container}>
@@ -122,12 +131,18 @@ export default function StandingsScreen() {
 									? "#CD7F32"
 									: undefined;
 
+					const tiebreak = getTiebreak(item, standings[index - 1]);
+					const displayName =
+						tiebreak !== "-"
+							? `${getPlayerName(item.playerId)} — ${tiebreak}`
+							: getPlayerName(item.playerId);
+
 					return (
 						<View
 							style={[
 								styles.row,
 								index % 2 === 0 && styles.rowEven,
-								podiumColor && { backgroundColor: podiumColor + "22" }, // leve transparência
+								podiumColor && { backgroundColor: podiumColor + "22" },
 							]}
 						>
 							<Text
@@ -142,7 +157,7 @@ export default function StandingsScreen() {
 									weight="medium"
 									color={podiumColor ?? Colors.text.primary}
 								>
-									{getPlayerName(item.playerId)}
+									{displayName}
 								</Text>
 							</View>
 
@@ -185,7 +200,7 @@ const styles = StyleSheet.create({
 	},
 	row: {
 		flexDirection: "row",
-		paddingVertical: Space.sm,
+		paddingVertical: Space.md,
 		paddingHorizontal: Space.md,
 		alignItems: "center",
 	},

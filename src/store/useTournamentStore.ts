@@ -5,9 +5,44 @@ import type {
 	Group,
 	Match,
 	PlayerStats,
+	TieBreakCriterion,
 	Tournament,
 } from "../core/tournament/types";
 import { uuid } from "../utils/uuid";
+
+const defaultTieBreakCriteria: TieBreakCriterion[] = [
+	"wins",
+	"gamesFor",
+	"gameDifference",
+	"headToHead",
+];
+function compareHeadToHead(a: PlayerStats, b: PlayerStats, group: Group) {
+	for (const round of group.matches) {
+		for (const match of round) {
+			const playersA = [match.player1, match.player2];
+			const playersB = [match.player3, match.player4];
+
+			const involvesA =
+				playersA.includes(a.playerId) || playersB.includes(a.playerId);
+			const involvesB =
+				playersA.includes(b.playerId) || playersB.includes(b.playerId);
+
+			if (!involvesA || !involvesB) continue;
+			if (match.status !== "finished") continue;
+
+			const winner =
+				match.scoreA > match.scoreB
+					? playersA
+					: match.scoreB > match.scoreA
+						? playersB
+						: null;
+
+			if (winner?.includes(a.playerId)) return 1;
+			if (winner?.includes(b.playerId)) return -1;
+		}
+	}
+	return 0;
+}
 
 export type TournamentState = {
 	tournaments: Tournament[];
@@ -44,6 +79,12 @@ export const useTournamentStore = create<TournamentState>()(
 					sport,
 					groups,
 					createdAt: new Date().toISOString(),
+					rules: {
+						setsToWin: 2,
+						gamesPerSet: 6,
+						tieBreak: "sempre",
+						tieBreakCriteria: defaultTieBreakCriteria,
+					},
 				};
 
 				set((state) => ({
@@ -97,7 +138,7 @@ export const useTournamentStore = create<TournamentState>()(
 						pointsDiff: 0,
 					}));
 
-					// Função auxiliar segura
+					// Função auxiliar para atualizar estatísticas
 					const updateStats = (
 						playerId: string,
 						updater: (s: PlayerStats) => void,
@@ -146,15 +187,46 @@ export const useTournamentStore = create<TournamentState>()(
 						s.pointsDiff = (s.pointsFor ?? 0) - (s.pointsAgainst ?? 0);
 					}
 
-					// Ordena
-					const ordered = [...standings].sort((a, b) => {
-						if (b.wins !== a.wins) return b.wins - a.wins;
-						if ((b.pointsDiff ?? 0) !== (a.pointsDiff ?? 0))
-							return (b.pointsDiff ?? 0) - (a.pointsDiff ?? 0);
-						return (b.pointsFor ?? 0) - (a.pointsFor ?? 0);
-					});
+					// 🔹 Critérios de desempate (padrão ou definidos no torneio)
+					const defaultTieBreakCriteria: TieBreakCriterion[] = [
+						"wins",
+						"gamesFor",
+						"gameDifference",
+						"headToHead",
+					];
 
-					// Atualiza o grupo
+					const criteria =
+						tournament.rules?.tieBreakCriteria ?? defaultTieBreakCriteria;
+
+					// 🔹 Função de comparação baseada nos critérios
+					const compareByCriteria = (a: PlayerStats, b: PlayerStats) => {
+						for (const criterion of criteria) {
+							let diff = 0;
+
+							switch (criterion) {
+								case "wins":
+									diff = b.wins - a.wins;
+									break;
+								case "gamesFor":
+									diff = (b.pointsFor ?? 0) - (a.pointsFor ?? 0);
+									break;
+								case "gameDifference":
+									diff = (b.pointsDiff ?? 0) - (a.pointsDiff ?? 0);
+									break;
+								case "headToHead":
+									diff = compareHeadToHead(a, b, group);
+									break;
+							}
+
+							if (diff !== 0) return diff;
+						}
+						return 0;
+					};
+
+					// 🔹 Ordena os jogadores com base nos critérios
+					const ordered = [...standings].sort(compareByCriteria);
+
+					// Atualiza o grupo no estado global
 					const updatedTournaments = state.tournaments.map((t) =>
 						t.id === tournamentId
 							? {

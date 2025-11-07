@@ -1,9 +1,10 @@
 // src/components/AddPlayerModal.tsx
 import React, { useState } from "react";
-import { Modal, View, TextInput, StyleSheet, ScrollView } from "react-native";
+import { View, TextInput, StyleSheet } from "react-native";
 import Text from "./Text";
 import ActionButton from "./ActionButton";
-import { Colors } from "../theme/tokens/colors";
+import Modal from "./Modal";
+import { Colors } from "../theme/tokens/colorsV2";
 import { Shape } from "../theme/tokens/shape";
 import { usePlayerStore } from "../store";
 
@@ -14,14 +15,14 @@ type Props = {
 
 export default function AddPlayerModal({ visible, onClose }: Props) {
 	const { addPlayer } = usePlayerStore();
-
 	const [newPlayerNames, setNewPlayerNames] = useState("");
 
 	const confirmAddPlayer = () => {
 		const players = newPlayerNames
-			.split("\n")
+			.trim()
+			.split(/\n+/)
 			.map((name) => name.trim())
-			.filter(Boolean); // remove linhas vazias
+			.filter(Boolean);
 
 		if (players.length === 0) return;
 
@@ -33,69 +34,47 @@ export default function AddPlayerModal({ visible, onClose }: Props) {
 	};
 
 	return (
-		<Modal visible={visible} transparent animationType="fade">
-			<View style={styles.overlay}>
-				<View style={styles.content}>
-					<Text weight="bold" size="lg" color={Colors.base.text}>
-						Novo(s) jogador(es)
-					</Text>
+		<Modal
+			visible={visible}
+			onCancel={onClose}
+			onConfirm={confirmAddPlayer}
+			title="Novo(s) jogador(es)"
+		>
+			<View>
+				<Text
+					size="sm"
+					color={Colors.text.secondary}
+					style={{ marginBottom: 10 }}
+				>
+					Digite um jogador por linha (ex: {"\n"}elias{"\n"}santos{"\n"}silva)
+				</Text>
 
-					<Text size="sm" color={Colors.base.text} style={{ marginTop: 5 }}>
-						Digite um jogador por linha (ex: {"\n"}elias{"\n"}santos{"\n"}silva)
-					</Text>
-
-					<TextInput
-						placeholder="Digite os nomes"
-						value={newPlayerNames}
-						onChangeText={setNewPlayerNames}
-						style={[styles.input, { height: 120, textAlignVertical: "top" }]}
-						multiline
-					/>
-
-					<View style={styles.actions}>
-						<ActionButton
-							label="Cancelar"
-							onPress={onClose}
-							variant="secondary"
-							style={{ width: 125 }}
-						/>
-						<ActionButton
-							label="Adicionar"
-							onPress={confirmAddPlayer}
-							variant="primary"
-							style={{ width: 125 }}
-						/>
-					</View>
-				</View>
+				<TextInput
+					placeholder="Digite os nomes"
+					placeholderTextColor={Colors.text.primary}
+					value={newPlayerNames}
+					onChangeText={setNewPlayerNames}
+					style={styles.input}
+					multiline
+					autoFocus
+				/>
 			</View>
 		</Modal>
 	);
 }
 
 const styles = StyleSheet.create({
-	overlay: {
-		flex: 1,
-		backgroundColor: "rgba(0,0,0,0.5)",
-		justifyContent: "center",
-		alignItems: "center",
-	},
-	content: {
-		backgroundColor: "#fff",
-		borderRadius: Shape.radiusLg,
-		padding: 20,
-		width: "90%",
-		maxWidth: 400,
-	},
 	input: {
-		backgroundColor: "#fff",
+		backgroundColor: Colors.surface.allwaysWhite,
 		borderWidth: 1,
-		borderColor: "#E0E0E0",
+		borderColor: Colors.surface.border,
 		borderRadius: Shape.radiusMd,
 		paddingHorizontal: 12,
 		paddingVertical: 10,
 		fontSize: 16,
-		marginTop: 15,
-		marginBottom: 20,
+		height: 120,
+		textAlignVertical: "top",
+		marginBottom: 16,
 	},
 	actions: {
 		flexDirection: "row",

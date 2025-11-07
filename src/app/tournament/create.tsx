@@ -40,12 +40,21 @@ type GroupDraft = {
 
 const MIN_PLAYERS_PER_GROUP = 4;
 
+const TIEBREAK_OPTIONS = [
+	{ id: "vitorias", label: "Vitórias", required: true },
+	{ id: "gamesAfavor", label: "Games a favor", required: false },
+	{ id: "saldoGames", label: "Saldo de games", required: false },
+	{ id: "confrontoDireto", label: "Confronto direto", required: false },
+] as const;
+
+type TieBreaker = (typeof TIEBREAK_OPTIONS)[number]["id"];
+
 const CreateTournamentScreen: React.FC = () => {
 	const router = useRouter();
 	const { createTournament } = useTournamentStore();
 	const { players } = usePlayerStore();
 
-	const [step, setStep] = useState<1 | 2>(1);
+	const [step, setStep] = useState<1 | 2 | 3>(1);
 	const [name, setName] = useState("");
 	const [sport, setSport] = useState<Tournament["sport"]>(
 		"Beach Tennis" as Tournament["sport"],
@@ -56,6 +65,9 @@ const CreateTournamentScreen: React.FC = () => {
 		{ id: uuid(), name: "Grupo 1", playerIds: [] },
 	]);
 	const [activeGroupIndex, setActiveGroupIndex] = useState(0);
+	const [tieBreakRules, setTieBreakRules] = useState<TieBreaker[]>([
+		"vitorias",
+	]);
 
 	const filteredPlayers = useMemo(() => {
 		if (!search.trim()) return players;
@@ -132,6 +144,17 @@ const CreateTournamentScreen: React.FC = () => {
 		setStep(2);
 	}, [name]);
 
+	const handleConfirmTieBreakRules = useCallback(() => {
+		if (tieBreakRules.length < 3) {
+			Alert.alert(
+				"Atenção",
+				"Selecione pelo menos 3 critérios (Vitórias é obrigatório).",
+			);
+			return;
+		}
+		setStep(3);
+	}, [tieBreakRules]);
+
 	const handleCreateTournament = useCallback(() => {
 		if (!allGroupsValid) {
 			Alert.alert(
@@ -153,6 +176,16 @@ const CreateTournamentScreen: React.FC = () => {
 		[groups],
 	);
 
+	const toggleTieBreaker = (rule: TieBreaker) => {
+		setTieBreakRules((prev) => {
+			if (rule === "vitorias") return prev; // obrigatório
+			return prev.includes(rule)
+				? prev.filter((r) => r !== rule)
+				: [...prev, rule];
+		});
+	};
+
+	// STEP 1: nome e esporte
 	if (step === 1) {
 		return (
 			<View style={styles.container}>
@@ -184,8 +217,60 @@ const CreateTournamentScreen: React.FC = () => {
 		);
 	}
 
-	const activeGroup = groups[activeGroupIndex];
+	// STEP 2: critérios de desempate
+	if (step === 2) {
+		return (
+			<View style={styles.container}>
+				<Text size="xl" weight="bold" style={styles.title}>
+					Critérios de desempate
+				</Text>
 
+				<Text size="sm" style={{ marginBottom: Space.md }}>
+					Selecione pelo menos 3 critérios. “Vitórias” é obrigatório.
+				</Text>
+
+				{TIEBREAK_OPTIONS.map((opt) => {
+					const selected = tieBreakRules.includes(opt.id);
+					return (
+						<TouchableOpacity
+							key={opt.id}
+							style={[styles.tieOption, selected && styles.tieOptionSelected]}
+							onPress={() => toggleTieBreaker(opt.id)}
+							disabled={opt.required}
+						>
+							<Text
+								size="md"
+								color={selected ? Colors.text.inverse : Colors.text.primary}
+							>
+								{opt.label}
+							</Text>
+							{opt.required && (
+								<Text size="sm" color={Colors.text.secondary}>
+									(obrigatório)
+								</Text>
+							)}
+						</TouchableOpacity>
+					);
+				})}
+
+				<View style={styles.footerRow}>
+					<ActionButton
+						label="Avançar"
+						onPress={handleConfirmTieBreakRules}
+						variant="primary"
+					/>
+					<ActionButton
+						label="Voltar"
+						onPress={() => setStep(1)}
+						variant="secondary"
+					/>
+				</View>
+			</View>
+		);
+	}
+
+	// STEP 3: montagem dos grupos
+	const activeGroup = groups[activeGroupIndex];
 	const renderPlayer: ListRenderItem<Player> = ({ item }) => {
 		const assignedGroupIndex = findGroupIndexOfPlayer(item.id);
 		const isInActive = assignedGroupIndex === activeGroupIndex;
@@ -199,14 +284,13 @@ const CreateTournamentScreen: React.FC = () => {
 						colors={[
 							Colors.button.secondary.background,
 							Colors.button.primary.background,
-						]} // use .background color value
+						]}
 						start={{ x: 0, y: 0 }}
 						end={{ x: 0.5, y: 1 }}
 						style={styles.playerItem}
 					>
 						<TouchableOpacity
 							onPress={() => togglePlayerInActiveGroup(item.id)}
-							accessibilityLabel={`Remover ${item.name} do grupo`}
 						>
 							<Text size="md" color={Colors.text.inverse}>
 								{item.name}
@@ -220,7 +304,6 @@ const CreateTournamentScreen: React.FC = () => {
 							isAssignedElsewhere && styles.playerItemDisabled,
 						]}
 						onPress={() => togglePlayerInActiveGroup(item.id)}
-						accessibilityLabel={`Adicionar ${item.name} ao grupo`}
 					>
 						<Text size="md" color={Colors.text.primary}>
 							{item.name}
@@ -242,7 +325,6 @@ const CreateTournamentScreen: React.FC = () => {
 				Montar Grupos
 			</Text>
 
-			{/* Tabs de grupos */}
 			<ScrollView
 				horizontal
 				showsHorizontalScrollIndicator={false}
@@ -293,7 +375,6 @@ const CreateTournamentScreen: React.FC = () => {
 				<TouchableOpacity
 					onPress={handleAddGroup}
 					style={[styles.groupTab, styles.addGroupTab]}
-					accessibilityLabel="Adicionar novo grupo"
 				>
 					<Text size="sm" weight="bold">
 						+ Grupo
@@ -336,7 +417,7 @@ const CreateTournamentScreen: React.FC = () => {
 				/>
 				<ActionButton
 					label="Voltar"
-					onPress={() => setStep(1)}
+					onPress={() => setStep(2)}
 					variant="secondary"
 				/>
 			</View>
@@ -350,13 +431,13 @@ const styles = StyleSheet.create({
 	container: {
 		flex: 1,
 		padding: Space.lg,
-		backgroundColor: Colors.surface.background, // ✅ token aplicado
+		backgroundColor: Colors.surface.background,
 	},
 	title: {
 		marginBottom: Space.md,
 	},
 	input: {
-		backgroundColor: Colors.surface.elevated, // ✅ branco padronizado
+		backgroundColor: Colors.surface.elevated,
 		borderWidth: 1,
 		borderColor: Colors.surface.border,
 		borderRadius: Shape.radiusMd,
@@ -433,5 +514,17 @@ const styles = StyleSheet.create({
 	},
 	button: {
 		marginTop: Space.md,
+	},
+	tieOption: {
+		padding: Space.md,
+		borderWidth: 1,
+		borderColor: Colors.surface.border,
+		borderRadius: Shape.radiusMd,
+		marginBottom: Space.sm,
+		backgroundColor: Colors.surface.elevated,
+	},
+	tieOptionSelected: {
+		backgroundColor: Colors.button.primary.background,
+		borderColor: Colors.button.primary.background,
 	},
 });

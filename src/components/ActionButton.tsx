@@ -1,12 +1,14 @@
 import {
+	View,
 	TouchableHighlight,
 	StyleSheet,
-	View,
 	type ViewStyle,
 } from "react-native";
 import { Link } from "expo-router";
-import { Shape } from "../theme/tokens/shape";
 import Text from "./Text";
+import { Colors } from "../theme/tokens/colorsV2";
+import { Shape } from "../theme/tokens/shape";
+import { Space } from "../theme/tokens/space";
 
 type Props = {
 	label: string;
@@ -19,12 +21,6 @@ type Props = {
 	accessibilityLabel?: string;
 };
 
-const COLORS = {
-	primary: "#a3bfd4",
-	secondary: "#e6b5b8",
-	disabled: "#cccccc",
-};
-
 export default function ActionButton({
 	label,
 	href,
@@ -32,21 +28,31 @@ export default function ActionButton({
 	variant = "primary",
 	style,
 	disabled = false,
+	testID,
+	accessibilityLabel,
 }: Props) {
-	const backgroundColor = disabled ? COLORS.disabled : COLORS[variant];
+	const palette = Colors.button[variant];
+	const backgroundColor = disabled ? palette.disabledBg : palette.background;
+
+	const pressedColor = disabled ? palette.disabledBg : palette.pressed;
+	const textColor = palette.text ?? Colors.text.onPrimary;
 
 	const content = (
 		<TouchableHighlight
-			onPress={disabled ? undefined : onPress} // ✅ desativa clique
-			underlayColor={disabled ? undefined : "#00000020"} // ✅ sem underlay
+			onPress={disabled ? undefined : onPress}
+			underlayColor={pressedColor}
 			style={[
 				styles.button,
-				{ backgroundColor, opacity: disabled ? 0.6 : 1 }, // ✅ aparência
+				{ backgroundColor, opacity: disabled ? 0.7 : 1 },
 				style,
 			]}
-			disabled={disabled} // ✅ importante para acessibilidade
+			disabled={disabled}
+			accessibilityRole="button"
+			accessibilityState={{ disabled }}
+			accessibilityLabel={accessibilityLabel ?? label}
+			testID={testID}
 		>
-			<Text size="md" weight="bold" color="#fff">
+			<Text size="md" weight="bold" color={textColor}>
 				{label}
 			</Text>
 		</TouchableHighlight>
@@ -57,7 +63,11 @@ export default function ActionButton({
 			<Link
 				href={href}
 				asChild
-				style={[styles.button, { backgroundColor }, style]}
+				style={[
+					styles.button,
+					{ backgroundColor, opacity: disabled ? 0.7 : 1 },
+					style,
+				]}
 			>
 				{content}
 			</Link>
@@ -69,8 +79,8 @@ export default function ActionButton({
 
 const styles = StyleSheet.create({
 	button: {
-		paddingVertical: 15,
-		paddingHorizontal: 20,
+		paddingVertical: Space.md,
+		paddingHorizontal: Space.lg,
 		borderRadius: Shape.radiusLg,
 		justifyContent: "center",
 		alignItems: "center",

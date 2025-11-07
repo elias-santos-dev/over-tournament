@@ -55,13 +55,27 @@ export type Group = {
 	standings: PlayerStats[]; // classificação atualizada
 };
 
+export type TieBreakCriterion =
+	| "wins"
+	| "gamesFor"
+	| "gameDifference"
+	| "headToHead";
+
+export interface TournamentRules {
+	setsToWin: number;
+	gamesPerSet: number;
+	tieBreak: "sempre" | "apenas_decisivo" | "nenhum";
+	tieBreakCriteria: TieBreakCriterion[];
+}
+
 // ====================
 // 🏆 Torneio
 // ====================
-export type Tournament = {
+export interface Tournament {
 	id: string;
 	name: string;
 	sport: "beach_tennis" | "padel" | "tennis" | "generic";
 	groups: Group[];
 	createdAt: string;
-};
+	rules: TournamentRules;
+}

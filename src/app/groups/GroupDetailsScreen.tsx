@@ -22,6 +22,7 @@ export default function GroupDetailsScreen() {
 	const { getPlayer } = usePlayerStore();
 
 	const tournament = tournaments.find((t) => t.id === tournamentId);
+	console.log(tournament?.rules);
 	const group = tournament?.groups.find((g) => g.id === groupId);
 
 	const [activeRound, setActiveRound] = useState(0);
@@ -194,52 +195,53 @@ export default function GroupDetailsScreen() {
 			>
 				{tournament.name} - {group.name}
 			</Text>
-
-			{/* Tabs das rodadas */}
-			<FlatList
-				horizontal
-				data={rounds}
-				keyExtractor={(_, index) => index.toString()}
-				renderItem={({ index }) => (
-					<TouchableOpacity
-						style={[
-							styles.roundTab,
-							activeRound === index
-								? { backgroundColor: Colors.primary.main }
-								: { backgroundColor: Colors.secondary.main, opacity: 0.7 },
-						]}
-						onPress={() => setActiveRound(index)}
-					>
-						<Text
-							size="sm"
-							weight="bold"
-							color={
+			<View style={{ flex: 1 }}>
+				{/* Tabs das rodadas */}
+				<FlatList
+					horizontal
+					data={rounds}
+					keyExtractor={(_, index) => index.toString()}
+					renderItem={({ index }) => (
+						<TouchableOpacity
+							style={[
+								styles.roundTab,
 								activeRound === index
-									? Colors.primary.onPrimary
-									: Colors.secondary.onSecondary
-							}
+									? { backgroundColor: Colors.primary.main }
+									: { backgroundColor: Colors.secondary.main, opacity: 0.7 },
+							]}
+							onPress={() => setActiveRound(index)}
 						>
-							Rodada {index + 1}
-						</Text>
-					</TouchableOpacity>
-				)}
-				style={styles.roundTabs}
-				showsHorizontalScrollIndicator={false}
-			/>
+							<Text
+								size="sm"
+								weight="bold"
+								color={
+									activeRound === index
+										? Colors.primary.onPrimary
+										: Colors.secondary.onSecondary
+								}
+							>
+								Rodada {index + 1}
+							</Text>
+						</TouchableOpacity>
+					)}
+					style={styles.roundTabs}
+					showsHorizontalScrollIndicator={false}
+				/>
 
-			{/* Lista de partidas */}
-			<FlatList
-				data={rounds[activeRound]}
-				keyExtractor={(item) => item.id}
-				renderItem={({ item }) => renderMatch(item)}
-				contentContainerStyle={{ paddingBottom: 80 }}
-			/>
+				{/* Lista de partidas */}
+				<FlatList
+					data={rounds[activeRound]}
+					keyExtractor={(item) => item.id}
+					renderItem={({ item }) => renderMatch(item)}
+					contentContainerStyle={{ paddingBottom: 80 }}
+				/>
 
-			<ActionButton
-				href={`groups/StandingsScreen?tournamentId=${tournamentId}&groupId=${groupId}`}
-				label="Ver Classificação"
-				variant="primary"
-			/>
+				<ActionButton
+					href={`groups/StandingsScreen?tournamentId=${tournamentId}&groupId=${groupId}`}
+					label="Ver Classificação"
+					variant="primary"
+				/>
+			</View>
 		</View>
 	);
 }
@@ -258,10 +260,13 @@ const styles = StyleSheet.create({
 		marginBottom: 15,
 	},
 	roundTab: {
+		flex: 1,
+		height: 60,
 		marginRight: 10,
 		paddingHorizontal: 15,
 		paddingVertical: 8,
 		borderRadius: Shape.radiusMd,
+		justifyContent: "center",
 	},
 	matchCard: {
 		padding: 15,
