@@ -1,41 +1,43 @@
 {
-  "expo": {
-    "package": "com.yourcompany.overtournament",
-    "name": "over-tournament",
-    "slug": "over-tournament",
-    "scheme": "overtournament",
-    "version": "1.0.0",
-    "orientation": "portrait",
-    "icon": "./assets/icon.png",
-    "userInterfaceStyle": "light",
-    "newArchEnabled": true,
-    "plugins": [
-      "expo-router"
-    ],
-    "splash": {
-      "image": "./assets/splash-icon.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
-    },
-    "ios": {
-      "supportsTablet": true
-    },
-    "android": {
-      "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
-      },
-      "edgeToEdgeEnabled": true
-    },
-    "web": {
-      "favicon": "./assets/favicon.png"
-    },
-    "extra": {
-      "router": {},
-      "eas": {
-        "projectId": "d4775027-a5ab-44c1-bdfe-f93e84356074"
-      }
-    },
-    "owner": "elias_santos"
-  }
+	"expo": {
+		"package": "com.yourcompany.overtournament",
+		"name": "over-tournament",
+		"slug": "over-tournament",
+		"scheme": "overtournament",
+		"version": "1.0.0",
+		"orientation": "portrait",
+		"icon": "./assets/icon.png",
+		"userInterfaceStyle": "light",
+		"newArchEnabled": true,
+		"plugins": ["expo-router"],
+		"splash": {
+			"image": "./assets/splash-icon.png"
+		},
+		"ios": {
+			"supportsTablet": true
+		},
+		"android": {
+			"adaptiveIcon": {
+				"foregroundImage": "./assets/adaptive-icon.png",
+				"backgroundColor": "transparent"
+			},
+			"edgeToEdgeEnabled": true
+		},
+		"web": {
+			"favicon": "./assets/favicon.png"
+		},
+		"extra": {
+			"router": {},
+			"eas": {
+				"projectId": "d4775027-a5ab-44c1-bdfe-f93e84356074"
+			}
+		},
+		"owner": "elias_santos",
+		"runtimeVersion": {
+			"policy": "appVersion"
+		},
+		"updates": {
+			"url": "https://u.expo.dev/d4775027-a5ab-44c1-bdfe-f93e84356074"
+		}
+	}
 }

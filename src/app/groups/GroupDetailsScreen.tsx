@@ -22,7 +22,6 @@ export default function GroupDetailsScreen() {
 	const { getPlayer } = usePlayerStore();
 
 	const tournament = tournaments.find((t) => t.id === tournamentId);
-	console.log(tournament?.rules);
 	const group = tournament?.groups.find((g) => g.id === groupId);
 
 	const [activeRound, setActiveRound] = useState(0);

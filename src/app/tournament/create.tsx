@@ -41,7 +41,7 @@ type GroupDraft = {
 const MIN_PLAYERS_PER_GROUP = 4;
 
 const TIEBREAK_OPTIONS = [
-	{ id: "vitorias", label: "Vitórias", required: true },
+	{ id: "vitorias", label: "Vitórias", required: false },
 	{ id: "gamesAfavor", label: "Games a favor", required: false },
 	{ id: "saldoGames", label: "Saldo de games", required: false },
 	{ id: "confrontoDireto", label: "Confronto direto", required: false },
@@ -65,9 +65,7 @@ const CreateTournamentScreen: React.FC = () => {
 		{ id: uuid(), name: "Grupo 1", playerIds: [] },
 	]);
 	const [activeGroupIndex, setActiveGroupIndex] = useState(0);
-	const [tieBreakRules, setTieBreakRules] = useState<TieBreaker[]>([
-		"vitorias",
-	]);
+	const [tieBreakRules, setTieBreakRules] = useState<TieBreaker[]>([]);
 
 	const filteredPlayers = useMemo(() => {
 		if (!search.trim()) return players;
@@ -145,11 +143,8 @@ const CreateTournamentScreen: React.FC = () => {
 	}, [name]);
 
 	const handleConfirmTieBreakRules = useCallback(() => {
-		if (tieBreakRules.length < 3) {
-			Alert.alert(
-				"Atenção",
-				"Selecione pelo menos 3 critérios (Vitórias é obrigatório).",
-			);
+		if (tieBreakRules.length < 2) {
+			Alert.alert("Atenção", "Selecione pelo menos 2 critérios.");
 			return;
 		}
 		setStep(3);
@@ -178,7 +173,6 @@ const CreateTournamentScreen: React.FC = () => {
 
 	const toggleTieBreaker = (rule: TieBreaker) => {
 		setTieBreakRules((prev) => {
-			if (rule === "vitorias") return prev; // obrigatório
 			return prev.includes(rule)
 				? prev.filter((r) => r !== rule)
 				: [...prev, rule];
@@ -226,7 +220,7 @@ const CreateTournamentScreen: React.FC = () => {
 				</Text>
 
 				<Text size="sm" style={{ marginBottom: Space.md }}>
-					Selecione pelo menos 3 critérios. “Vitórias” é obrigatório.
+					Selecione pelo menos 2 critérios.
 				</Text>
 
 				{TIEBREAK_OPTIONS.map((opt) => {
@@ -431,7 +425,7 @@ const styles = StyleSheet.create({
 	container: {
 		flex: 1,
 		padding: Space.lg,
-		backgroundColor: Colors.surface.background,
+		backgroundColor: Colors.surface.allwaysWhite,
 	},
 	title: {
 		marginBottom: Space.md,
@@ -473,12 +467,16 @@ const styles = StyleSheet.create({
 		borderRadius: Shape.radiusSm,
 		borderWidth: 1,
 		borderColor: Colors.surface.border,
-		marginBottom: Space.xs,
+		marginVertical: Space.xs,
 	},
 	playerItemDisabled: {
 		opacity: 0.6,
 	},
 	groupTab: {
+		height: 120,
+		alignSelf: "center",
+		alignContent: "center",
+		justifyContent: "center",
 		paddingHorizontal: Space.md,
 		paddingVertical: Space.sm,
 		borderRadius: Shape.radiusMd,
@@ -502,6 +500,7 @@ const styles = StyleSheet.create({
 	},
 	groupsScroll: {
 		marginBottom: Space.sm,
+		padding: Space.md,
 	},
 	footerRow: {
 		position: "absolute",
