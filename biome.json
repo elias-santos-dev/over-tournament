@@ -26,10 +26,6 @@
 					"options": {
 						"conventions": [
 							{
-								"selector": { "kind": "functionParameter", "scope": "any" },
-								"formats": ["camelCase"]
-							},
-							{
 								"selector": { "kind": "typeParameter", "scope": "any" },
 								"formats": ["PascalCase"]
 							},

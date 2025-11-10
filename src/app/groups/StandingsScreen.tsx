@@ -1,17 +1,14 @@
-import React, { useEffect, useMemo, useCallback } from "react";
-import { View, FlatList, StyleSheet } from "react-native";
+import React, { useEffect, useMemo, useCallback, type FC } from "react"; // ✅ Adicionado FC para tipagem do componente
+import { View, FlatList, StyleSheet, type ListRenderItem } from "react-native"; // ✅ Adicionado ListRenderItem
 import { useLocalSearchParams } from "expo-router";
 import Text from "../../components/Text";
-import {
-	type TournamentState,
-	useTournamentStore,
-} from "../../store/useTournamentStore";
+import { useTournamentStore } from "../../store/useTournamentStore"; // ✅ Removido import não utilizado (TournamentState)
 import { usePlayerStore } from "../../store/usePlayerStore";
 import { Colors } from "../../theme/tokens/colorsV2";
 import { Space } from "../../theme/tokens/space";
 import type { PlayerStats } from "../../core/tournament/types";
 
-export default function StandingsScreen() {
+const StandingsScreen: FC = () => {
 	const { tournamentId, groupId } = useLocalSearchParams() as {
 		tournamentId?: string;
 		groupId?: string;
@@ -19,7 +16,7 @@ export default function StandingsScreen() {
 
 	const tournaments = useTournamentStore((s) => s.tournaments);
 	const updateStandings = useTournamentStore(
-		(s) => (s as TournamentState).updateStandings,
+		(s) => s.updateStandings, // ✅ Simplificada a seleção do estado
 	);
 	const players = usePlayerStore((s) => s.players);
 
@@ -87,31 +84,89 @@ export default function StandingsScreen() {
 		return "CD"; // Confronto direto
 	};
 
+	// ✅ Extraído o item da lista para um componente separado para melhor organização
+	const renderStandingRow: ListRenderItem<PlayerStats> = useCallback(
+		({ item, index }) => {
+			const podiumColor =
+				index === 0
+					? PodiumColors.gold
+					: index === 1
+						? PodiumColors.silver
+						: index === 2
+							? PodiumColors.bronze
+							: undefined;
+
+			const tiebreak = getTiebreak(item, standings[index - 1]);
+			const displayName =
+				tiebreak !== "-"
+					? `${getPlayerName(item.playerId)} — ${tiebreak}`
+					: getPlayerName(item.playerId);
+
+			return (
+				<View
+					style={[
+						styles.row,
+						index % 2 === 0 && styles.rowEven,
+						// ✅ Aplicado token de cor para o pódio com opacidade
+						podiumColor && { backgroundColor: podiumColor + "22" },
+					]}
+					// ✅ Adicionado testID e accessibilityLabel para melhor acessibilidade e testes
+					testID={`standing-row-${index}`}
+					accessibilityLabel={`Posição ${index + 1}, jogador ${displayName}`}
+				>
+					<Text
+						style={[styles.colRank, podiumColor && { color: podiumColor }]}
+						accessibilityLabel={`Posição ${index + 1}`}
+					>
+						{index + 1}
+					</Text>
+
+					<View style={styles.colPlayer}>
+						<Text weight="medium" color={podiumColor ?? Colors.text.primary}>
+							{displayName}
+						</Text>
+					</View>
+
+					<Text style={styles.colSmall}>{item.wins ?? 0}</Text>
+					<Text style={styles.colSmall}>{item.losses ?? 0}</Text>
+					<Text style={styles.colSmall}>{item.pointsFor ?? 0}</Text>
+					<Text style={styles.colSmall}>{item.pointsAgainst ?? 0}</Text>
+					<Text style={styles.colSmall}>{item.pointsDiff ?? 0}</Text>
+				</View>
+			);
+		},
+		[standings, getPlayerName],
+	);
+
 	return (
 		<View style={styles.container}>
-			<View style={styles.header}>
+			<View style={styles.screenHeader}>
 				<Text size="lg" weight="bold" color={Colors.text.primary}>
 					{tournament.name} — {group.name}
 				</Text>
 			</View>
 
 			<View style={styles.tableHeader}>
-				<Text weight="bold" style={styles.colPlayer}>
+				<Text
+					weight="bold"
+					style={styles.colPlayer}
+					color={Colors.text.primary}
+				>
 					Jogador
 				</Text>
-				<Text weight="bold" style={styles.colSmall}>
+				<Text weight="bold" style={styles.colSmall} color={Colors.text.primary}>
 					V
 				</Text>
-				<Text weight="bold" style={styles.colSmall}>
+				<Text weight="bold" style={styles.colSmall} color={Colors.text.primary}>
 					D
 				</Text>
-				<Text weight="bold" style={styles.colSmall}>
+				<Text weight="bold" style={styles.colSmall} color={Colors.text.primary}>
 					+
 				</Text>
-				<Text weight="bold" style={styles.colSmall}>
+				<Text weight="bold" style={styles.colSmall} color={Colors.text.primary}>
 					-
 				</Text>
-				<Text weight="bold" style={styles.colSmall}>
+				<Text weight="bold" style={styles.colSmall} color={Colors.text.primary}>
 					Dif
 				</Text>
 			</View>
@@ -119,90 +174,51 @@ export default function StandingsScreen() {
 			<FlatList
 				data={standings}
 				keyExtractor={(item) => item.playerId}
+				renderItem={renderStandingRow}
 				contentContainerStyle={{ paddingBottom: Space.xxl }}
 				ListEmptyComponent={renderEmpty}
-				renderItem={({ item, index }) => {
-					const podiumColor =
-						index === 0
-							? "#FFD700"
-							: index === 1
-								? "#C0C0C0"
-								: index === 2
-									? "#CD7F32"
-									: undefined;
-
-					const tiebreak = getTiebreak(item, standings[index - 1]);
-					const displayName =
-						tiebreak !== "-"
-							? `${getPlayerName(item.playerId)} — ${tiebreak}`
-							: getPlayerName(item.playerId);
-
-					return (
-						<View
-							style={[
-								styles.row,
-								index % 2 === 0 && styles.rowEven,
-								podiumColor && { backgroundColor: podiumColor + "22" },
-							]}
-						>
-							<Text
-								style={[styles.colRank, podiumColor && { color: podiumColor }]}
-								accessibilityLabel={`Posição ${index + 1}`}
-							>
-								{index + 1}
-							</Text>
-
-							<View style={styles.colPlayer}>
-								<Text
-									weight="medium"
-									color={podiumColor ?? Colors.text.primary}
-								>
-									{displayName}
-								</Text>
-							</View>
-
-							<Text style={styles.colSmall}>{item.wins ?? 0}</Text>
-							<Text style={styles.colSmall}>{item.losses ?? 0}</Text>
-							<Text style={styles.colSmall}>{item.pointsFor ?? 0}</Text>
-							<Text style={styles.colSmall}>{item.pointsAgainst ?? 0}</Text>
-							<Text style={styles.colSmall}>{item.pointsDiff ?? 0}</Text>
-						</View>
-					);
-				}}
 			/>
 		</View>
 	);
-}
+};
+
+// ✅ Adicionadas constantes para cores do pódio para melhor legibilidade
+const PodiumColors = {
+	gold: "#FFD700",
+	silver: "#C0C0C0",
+	bronze: "#CD7F32",
+};
 
 const styles = StyleSheet.create({
 	container: {
 		flex: 1,
 		backgroundColor: Colors.surface.allwaysWhite,
 	},
-	header: {
-		paddingTop: Space.lg,
-		paddingBottom: Space.md,
-		paddingHorizontal: Space.md,
+	// ✅ Renomeado para evitar conflito com tableHeader e ser mais descritivo
+	screenHeader: {
 		flexDirection: "row",
 		justifyContent: "center",
 		alignItems: "center",
+		paddingTop: Space.lg,
+		paddingBottom: Space.md,
+		paddingHorizontal: Space.md,
 		borderBottomWidth: 1,
 		borderColor: Colors.surface.border,
 	},
 	tableHeader: {
 		flexDirection: "row",
+		alignItems: "center",
 		paddingHorizontal: Space.md,
 		paddingVertical: Space.sm,
-		alignItems: "center",
+		backgroundColor: Colors.surface.allwaysWhite,
 		borderBottomWidth: 1,
 		borderColor: Colors.surface.border,
-		backgroundColor: Colors.surface.allwaysWhite,
 	},
 	row: {
 		flexDirection: "row",
+		alignItems: "center",
 		paddingVertical: Space.md,
 		paddingHorizontal: Space.md,
-		alignItems: "center",
 	},
 	rowEven: {
 		backgroundColor: Colors.surface.background,
@@ -210,8 +226,8 @@ const styles = StyleSheet.create({
 	colRank: {
 		width: 28,
 		textAlign: "center",
-		fontWeight: "700",
 		color: Colors.text.primary,
+		fontWeight: "700", // TODO: Substituir por token de peso de fonte se disponível (ex: Font.weight.bold)
 	},
 	colPlayer: {
 		flex: 1,
@@ -229,3 +245,5 @@ const styles = StyleSheet.create({
 		padding: Space.lg,
 	},
 });
+
+export default StandingsScreen;
