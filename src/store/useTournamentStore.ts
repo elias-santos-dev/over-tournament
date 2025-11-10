@@ -22,12 +22,11 @@ function compareHeadToHead(a: PlayerStats, b: PlayerStats, group: Group) {
 			const playersA = [match.player1, match.player2];
 			const playersB = [match.player3, match.player4];
 
-			const involvesA =
-				playersA.includes(a.playerId) || playersB.includes(a.playerId);
-			const involvesB =
-				playersA.includes(b.playerId) || playersB.includes(b.playerId);
+			const isHeadToHeadMatch =
+				(playersA.includes(a.playerId) && playersB.includes(b.playerId)) ||
+				(playersA.includes(b.playerId) && playersB.includes(a.playerId));
 
-			if (!involvesA || !involvesB) continue;
+			if (!isHeadToHeadMatch) continue;
 			if (match.status !== "finished") continue;
 
 			const winner =
@@ -37,8 +36,8 @@ function compareHeadToHead(a: PlayerStats, b: PlayerStats, group: Group) {
 						? playersB
 						: null;
 
-			if (winner?.includes(a.playerId)) return 1;
-			if (winner?.includes(b.playerId)) return -1;
+			if (winner?.includes(a.playerId)) return -1; // 'a' venceu, 'a' deve vir antes, então retorna negativo
+			if (winner?.includes(b.playerId)) return 1; // 'b' venceu, 'b' deve vir antes, então retorna positivo
 		}
 	}
 	return 0;
@@ -166,8 +165,10 @@ export const useTournamentStore = create<TournamentState>()(
 								updateStats(playerId, (s) => {
 									s.pointsFor = (s.pointsFor ?? 0) + match.scoreA;
 									s.pointsAgainst = (s.pointsAgainst ?? 0) + match.scoreB;
-									if (winner?.includes(playerId)) s.wins += 1;
-									else s.losses += 1;
+									if (winner) {
+										if (winner.includes(playerId)) s.wins += 1;
+										else s.losses += 1;
+									}
 								});
 							}
 
@@ -175,8 +176,10 @@ export const useTournamentStore = create<TournamentState>()(
 								updateStats(playerId, (s) => {
 									s.pointsFor = (s.pointsFor ?? 0) + match.scoreB;
 									s.pointsAgainst = (s.pointsAgainst ?? 0) + match.scoreA;
-									if (winner?.includes(playerId)) s.wins += 1;
-									else s.losses += 1;
+									if (winner) {
+										if (winner.includes(playerId)) s.wins += 1;
+										else s.losses += 1;
+									}
 								});
 							}
 						}
@@ -188,12 +191,6 @@ export const useTournamentStore = create<TournamentState>()(
 					}
 
 					// 🔹 Critérios de desempate (padrão ou definidos no torneio)
-					const defaultTieBreakCriteria: TieBreakCriterion[] = [
-						"wins",
-						"gamesFor",
-						"gameDifference",
-						"headToHead",
-					];
 
 					const criteria =
 						tournament.rules?.tieBreakCriteria ?? defaultTieBreakCriteria;
@@ -214,7 +211,7 @@ export const useTournamentStore = create<TournamentState>()(
 									diff = (b.pointsDiff ?? 0) - (a.pointsDiff ?? 0);
 									break;
 								case "headToHead":
-									diff = compareHeadToHead(a, b, group);
+									diff = compareHeadToHead(b, a, group);
 									break;
 							}
 
