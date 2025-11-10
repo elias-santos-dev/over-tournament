@@ -4,7 +4,6 @@
 export type Player = {
 	id: string;
 	name: string;
-	avatar?: string; // URI local ou base64
 };
 
 // ====================

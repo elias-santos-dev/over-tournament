@@ -16,6 +16,7 @@ const defaultTieBreakCriteria: TieBreakCriterion[] = [
 	"gameDifference",
 	"headToHead",
 ];
+
 function compareHeadToHead(a: PlayerStats, b: PlayerStats, group: Group) {
 	for (const round of group.matches) {
 		for (const match of round) {

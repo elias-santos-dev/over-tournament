@@ -4,7 +4,7 @@
 		"name": "over-tournament",
 		"slug": "over-tournament",
 		"scheme": "overtournament",
-		"version": "1.0.0",
+		"version": "0.0.0-1",
 		"orientation": "portrait",
 		"icon": "./assets/icon.png",
 		"userInterfaceStyle": "light",
@@ -14,12 +14,14 @@
 			"image": "./assets/splash-icon.png"
 		},
 		"ios": {
+			"adaptiveIcon": {
+				"foregroundImage": "./assets/adaptive-icon.png"
+			},
 			"supportsTablet": true
 		},
 		"android": {
 			"adaptiveIcon": {
-				"foregroundImage": "./assets/adaptive-icon.png",
-				"backgroundColor": "transparent"
+				"foregroundImage": "./assets/adaptive-icon.png"
 			},
 			"edgeToEdgeEnabled": true
 		},
