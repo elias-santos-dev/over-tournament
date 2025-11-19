@@ -43,14 +43,14 @@ export default function GroupDetailsScreen() {
 
 	const handleSaveScore = (match: Match) => {
 		const matchScore = scores[match.id];
-		if (!matchScore?.scoreA || !matchScore?.scoreB) return;
+		if (!matchScore?.scoreA && !matchScore?.scoreB) return;
 
 		updateMatchResult(
 			tournament.id,
 			group.id,
 			match.id,
-			Number(matchScore.scoreA),
-			Number(matchScore.scoreB),
+			matchScore.scoreA !== undefined ? Number(matchScore.scoreA) : 0,
+			matchScore.scoreB !== undefined ? Number(matchScore.scoreB) : 0,
 		);
 	};
 

@@ -5,27 +5,17 @@ import { uuid } from "../../utils/uuid";
 
 export function generateGroups(
 	name: string,
-	players: string[], // agora recebemos Player[] ao invés de string[]
-	numGroups: number,
+	players: string[]
 ): Group[] {
-	const shuffled = shuffle([...players]);
 	const groups: Group[] = [];
-	const groupSize = Math.ceil(players.length / numGroups);
-
-	for (let i = 0; i < numGroups; i++) {
-		const groupPlayers = shuffled.slice(i * groupSize, (i + 1) * groupSize);
-		const groupId = uuid();
-
-		const matches = generateSuper8Matches(groupPlayers);
-
-		groups.push({
-			id: groupId,
-			name: name,
-			playerIds: groupPlayers,
-			matches,
-			standings: [],
-		});
-	}
-
+	const groupId = uuid();
+	const matches = generateSuper8Matches(players);
+	groups.push({
+		id: groupId,
+		name: name,
+		playerIds: players,
+		matches,
+		standings: [],
+	});
 	return groups;
 }

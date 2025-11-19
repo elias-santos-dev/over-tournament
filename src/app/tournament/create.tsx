@@ -159,7 +159,7 @@ const CreateTournamentScreen: React.FC = () => {
 			return;
 		}
 		const formatGroup: Group[] = groups.flatMap((g) =>
-			generateGroups(g.name, g.playerIds, 1),
+			generateGroups(g.name, g.playerIds),
 		);
 		createTournament(name, sport, formatGroup);
 		router.canGoBack() ? router.back() : router.replace("home");
