@@ -1,6 +1,6 @@
 {
 	"expo": {
-		"package": "com.yourcompany.overtournament",
+		"package": "com.atlas.overtournament",
 		"name": "over-tournament",
 		"slug": "over-tournament",
 		"scheme": "overtournament",
@@ -23,7 +23,8 @@
 			"adaptiveIcon": {
 				"foregroundImage": "./assets/adaptive-icon.png"
 			},
-			"edgeToEdgeEnabled": true
+			"edgeToEdgeEnabled": true,
+			"package": "com.atlas.overtournament"
 		},
 		"web": {
 			"favicon": "./assets/favicon.png"
