@@ -1,11 +1,18 @@
 import React, { useEffect, useMemo, useCallback, type FC } from "react"; // ✅ Adicionado FC para tipagem do componente
-import { View, FlatList, StyleSheet, type ListRenderItem } from "react-native"; // ✅ Adicionado ListRenderItem
+import {
+	View,
+	FlatList,
+	StyleSheet,
+	type ListRenderItem,
+	Share,
+} from "react-native"; // ✅ Adicionado ListRenderItem
 import { useLocalSearchParams } from "expo-router";
 import Text from "../../components/Text";
 import { useTournamentStore } from "../../store/useTournamentStore"; // ✅ Removido import não utilizado (TournamentState)
 import { usePlayerStore } from "../../store/usePlayerStore";
 import { Colors } from "../../theme/tokens/colorsV2";
 import { Space } from "../../theme/tokens/space";
+import ActionButton from "../../components/ActionButton";
 import type { PlayerStats } from "../../core/tournament/types";
 
 const StandingsScreen: FC = () => {
@@ -84,6 +91,35 @@ const StandingsScreen: FC = () => {
 		return "CD"; // Confronto direto
 	};
 
+	const handleShare = async () => {
+		if (!tournament || !group || !standings.length) return;
+
+		let shareableText = `Classificação: ${tournament.name} — ${group.name}\n\n`;
+		shareableText += "Pos | Jogador | V | D | + | - | Dif\n";
+		shareableText += "-----------------------------------\n";
+
+		standings.forEach((item, index) => {
+			const playerName = getPlayerName(item.playerId);
+			const pos = index + 1;
+			const wins = item.wins ?? 0;
+			const losses = item.losses ?? 0;
+			const pointsFor = item.pointsFor ?? 0;
+			const pointsAgainst = item.pointsAgainst ?? 0;
+			const pointsDiff = item.pointsDiff ?? 0;
+
+			shareableText += `${pos} | ${playerName} | ${wins} | ${losses} | ${pointsFor} | ${pointsAgainst} | ${pointsDiff}\n`;
+		});
+
+		try {
+			await Share.share({
+				title: `Classificação do ${group.name}`,
+				message: shareableText,
+			});
+		} catch (error) {
+			console.error("Erro ao compartilhar classificação", error);
+		}
+	};
+
 	// ✅ Extraído o item da lista para um componente separado para melhor organização
 	const renderStandingRow: ListRenderItem<PlayerStats> = useCallback(
 		({ item, index }) => {
@@ -141,9 +177,19 @@ const StandingsScreen: FC = () => {
 	return (
 		<View style={styles.container}>
 			<View style={styles.screenHeader}>
-				<Text size="lg" weight="bold" color={Colors.text.primary}>
+				<Text
+					size="lg"
+					weight="bold"
+					color={Colors.text.primary}
+					style={styles.headerTitle}
+				>
 					{tournament.name} — {group.name}
 				</Text>
+				<ActionButton
+					onPress={handleShare}
+					icon="share-variant"
+					variant="secondary"
+				/>
 			</View>
 
 			<View style={styles.tableHeader}>
@@ -197,13 +243,16 @@ const styles = StyleSheet.create({
 	// ✅ Renomeado para evitar conflito com tableHeader e ser mais descritivo
 	screenHeader: {
 		flexDirection: "row",
-		justifyContent: "center",
+		justifyContent: "space-between",
 		alignItems: "center",
 		paddingTop: Space.lg,
 		paddingBottom: Space.md,
 		paddingHorizontal: Space.md,
 		borderBottomWidth: 1,
 		borderColor: Colors.surface.border,
+	},
+	headerTitle: {
+		flex: 1,
 	},
 	tableHeader: {
 		flexDirection: "row",
