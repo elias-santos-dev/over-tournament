@@ -16,6 +16,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import Text from "../../components/Text";
 import ActionButton from "../../components/ActionButton";
 import AddPlayerModal from "../../components/AddPlayerModal";
+import RenameGroupModal from "../../components/RenameGroupModal";
 
 import { useTournamentStore } from "../../store/useTournamentStore";
 import { usePlayerStore } from "../../store/usePlayerStore";
@@ -66,6 +67,11 @@ const CreateTournamentScreen: React.FC = () => {
 	]);
 	const [activeGroupIndex, setActiveGroupIndex] = useState(0);
 	const [tieBreakRules, setTieBreakRules] = useState<TieBreaker[]>([]);
+	const [isRenameModalVisible, setRenameModalVisible] = useState(false);
+	const [groupToRename, setGroupToRename] = useState<{
+		index: number;
+		name: string;
+	} | null>(null);
 
 	const filteredPlayers = useMemo(() => {
 		if (!search.trim()) return players;
@@ -132,6 +138,19 @@ const CreateTournamentScreen: React.FC = () => {
 			);
 		},
 		[groups.length],
+	);
+
+	const handleRenameGroup = useCallback(
+		(newName: string) => {
+			if (!groupToRename) return;
+			setGroups((prev) =>
+				prev.map((g, i) =>
+					i === groupToRename.index ? { ...g, name: newName } : g,
+				),
+			);
+			setRenameModalVisible(false);
+		},
+		[groupToRename],
 	);
 
 	const handleNextStep = useCallback(() => {
@@ -315,6 +334,15 @@ const CreateTournamentScreen: React.FC = () => {
 				onClose={() => setAddModalVisible(false)}
 			/>
 
+			{groupToRename && (
+				<RenameGroupModal
+					visible={isRenameModalVisible}
+					currentName={groupToRename.name}
+					onClose={() => setRenameModalVisible(false)}
+					onSave={handleRenameGroup}
+				/>
+			)}
+
 			<Text size="xl" weight="bold" style={styles.title}>
 				Montar Grupos
 			</Text>
@@ -338,22 +366,29 @@ const CreateTournamentScreen: React.FC = () => {
 								!valid && g.playerIds.length > 0 && styles.groupTabInvalid,
 							]}
 							onLongPress={() => {
-								if (groups.length > 1) {
-									Alert.alert(
-										"Remover grupo",
-										`Deseja realmente remover o grupo ${idx + 1}?`,
-										[
-											{ text: "Cancelar", style: "cancel" },
-											{
-												text: "Remover",
-												style: "destructive",
-												onPress: () => handleRemoveGroup(idx),
+								Alert.alert(
+									`Opções para ${g.name}`,
+									"O que você gostaria de fazer?",
+									[
+										{
+											text: "Renomear",
+											onPress: () => {
+												setGroupToRename({ index: idx, name: g.name });
+												setRenameModalVisible(true);
 											},
-										],
-									);
-								}
+										},
+										{
+											text: "Remover",
+											style: "destructive",
+											onPress: () => handleRemoveGroup(idx),
+											// Desabilita a remoção se for o último grupo
+											disabled: groups.length <= 1,
+										},
+										{ text: "Cancelar", style: "cancel" },
+									],
+								);
 							}}
-							delayLongPress={400}
+							delayLongPress={300}
 						>
 							<Text
 								size="sm"
