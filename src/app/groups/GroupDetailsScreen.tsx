@@ -5,6 +5,7 @@ import {
 	TouchableOpacity,
 	StyleSheet,
 	TextInput,
+	Share,
 } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import Text from "../../components/Text";
@@ -13,6 +14,7 @@ import { Shape } from "../../theme/tokens/shape";
 import type { Match } from "../../core/tournament/types";
 import { usePlayerStore } from "../../store";
 import { Colors } from "../../theme/tokens/colorsV2";
+import { Space } from "../../theme/tokens/space";
 import ActionButton from "../../components/ActionButton";
 
 export default function GroupDetailsScreen() {
@@ -52,6 +54,31 @@ export default function GroupDetailsScreen() {
 			matchScore.scoreA !== undefined ? Number(matchScore.scoreA) : 0,
 			matchScore.scoreB !== undefined ? Number(matchScore.scoreB) : 0,
 		);
+	};
+
+	const handleShare = async () => {
+		if (!group || !rounds) return;
+
+		let shareableText = `${group.name}:\n\n`;
+
+		rounds.forEach((round, roundIndex) => {
+			shareableText += `   Rodada ${roundIndex + 1}\n`;
+			round.forEach((match) => {
+				const duoA = `${getPlayer(match.player1)?.name} & ${getPlayer(match.player2)?.name}`;
+				const duoB = `${getPlayer(match.player3)?.name} & ${getPlayer(match.player4)?.name}`;
+				shareableText += `      ${duoA} vs ${duoB}\n`;
+			});
+			shareableText += "\n";
+		});
+
+		try {
+			await Share.share({
+				title: `Partidas do ${group.name}`,
+				message: shareableText,
+			});
+		} catch (error) {
+			console.error("Erro ao compartilhar", error);
+		}
 	};
 
 	const renderMatch = (match: Match) => {
@@ -186,14 +213,21 @@ export default function GroupDetailsScreen() {
 
 	return (
 		<View style={styles.container}>
-			<Text
-				size="xl"
-				weight="bold"
-				style={styles.title}
-				color={Colors.text.primary}
-			>
-				{tournament.name} - {group.name}
-			</Text>
+			<View style={styles.header}>
+				<Text
+					size="xl"
+					weight="bold"
+					style={styles.title}
+					color={Colors.text.primary}
+				>
+					{tournament.name} - {group.name}
+				</Text>
+				<ActionButton
+					onPress={handleShare}
+					variant="secondary"
+					label={"compartilhar"}
+				/>
+			</View>
 			<View style={{ flex: 1 }}>
 				{/* Tabs das rodadas */}
 				<FlatList
@@ -251,8 +285,15 @@ const styles = StyleSheet.create({
 		padding: 20,
 		backgroundColor: Colors.surface.allwaysWhite,
 	},
-	title: {
+	header: {
+		flexDirection: "row",
+		justifyContent: "space-between",
+		alignItems: "center",
 		marginBottom: 20,
+	},
+	title: {
+		flex: 1,
+		marginRight: Space.sm,
 	},
 	roundTabs: {
 		flexDirection: "row",
